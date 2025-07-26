@@ -1,6 +1,9 @@
 *.pdf
 .pytest_cache
 .DS_Store
-.kiro/
-.vscode/
+.kiro/*
+.kiro
+.kiro/specs/*
+kiro/
+.vscode
 crescontrol-gui/

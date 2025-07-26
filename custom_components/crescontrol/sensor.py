@@ -276,6 +276,51 @@ DIAGNOSTIC_SENSOR_DEFINITIONS: List[Dict[str, Any]] = [
         "icon": "mdi:alert",
         "entity_category": EntityCategory.DIAGNOSTIC,
     },
+    {
+        "key": "websocket_status",
+        "name": "WebSocket Status",
+        "unit": None,
+        "device_class": None,
+        "state_class": None,
+        "icon": "mdi:web",
+        "entity_category": EntityCategory.DIAGNOSTIC,
+    },
+    {
+        "key": "websocket_enabled",
+        "name": "WebSocket Enabled",
+        "unit": None,
+        "device_class": None,
+        "state_class": None,
+        "icon": "mdi:toggle-switch",
+        "entity_category": EntityCategory.DIAGNOSTIC,
+    },
+    {
+        "key": "websocket_connected",
+        "name": "WebSocket Connected",
+        "unit": None,
+        "device_class": None,
+        "state_class": None,
+        "icon": "mdi:lan-connect",
+        "entity_category": EntityCategory.DIAGNOSTIC,
+    },
+    {
+        "key": "using_websocket_data",
+        "name": "Using WebSocket Data",
+        "unit": None,
+        "device_class": None,
+        "state_class": None,
+        "icon": "mdi:flash",
+        "entity_category": EntityCategory.DIAGNOSTIC,
+    },
+    {
+        "key": "adaptive_polling",
+        "name": "Adaptive Polling",
+        "unit": None,
+        "device_class": None,
+        "state_class": None,
+        "icon": "mdi:speedometer",
+        "entity_category": EntityCategory.DIAGNOSTIC,
+    },
 ]
 
 
@@ -615,6 +660,28 @@ class CresControlDiagnosticSensor(CoordinatorEntity, SensorEntity):
                     return error_history[-1][1]  # Return the error type of the most recent error
             return "none"
             
+        # WebSocket-specific diagnostic values
+        elif self._key == "websocket_status":
+            if hasattr(self.coordinator, 'client') and hasattr(self.coordinator.client, 'get_websocket_status'):
+                try:
+                    ws_status = self.coordinator.client.get_websocket_status()
+                    return ws_status.get("status", "disabled")
+                except Exception:
+                    return "error"
+            return "disabled"
+            
+        elif self._key == "websocket_enabled":
+            return health_info.get("websocket_enabled", False)
+            
+        elif self._key == "websocket_connected":
+            return health_info.get("websocket_connected", False)
+            
+        elif self._key == "using_websocket_data":
+            return health_info.get("using_websocket_data", False)
+            
+        elif self._key == "adaptive_polling":
+            return health_info.get("adaptive_polling", False)
+            
         return None
 
     @property
@@ -640,6 +707,20 @@ class CresControlDiagnosticSensor(CoordinatorEntity, SensorEntity):
                     "network_status": network_status,
                     "base_timeout": network_status.get("base_timeout", "unknown"),
                     "current_timeout": network_status.get("current_timeout", "unknown"),
+                })
+            except Exception:
+                pass  # Silently handle errors for diagnostic sensors
+        
+        # Add WebSocket status if available
+        if hasattr(self.coordinator, 'client') and hasattr(self.coordinator.client, 'get_websocket_status'):
+            try:
+                ws_status = self.coordinator.client.get_websocket_status()
+                attributes.update({
+                    "websocket_status": ws_status,
+                    "websocket_messages_received": ws_status.get("messages_received", 0),
+                    "websocket_messages_sent": ws_status.get("messages_sent", 0),
+                    "websocket_uptime": ws_status.get("uptime_seconds", 0),
+                    "websocket_subscriptions": ws_status.get("subscriptions", []),
                 })
             except Exception:
                 pass  # Silently handle errors for diagnostic sensors

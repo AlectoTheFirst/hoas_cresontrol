@@ -22,10 +22,3 @@ The integration communicates with the device over its HTTP API using the `/comma
 * Authentication is not currently supported.  If future CresControl firmware requires tokens or credentials, this integration will need to be extended.
 * Only a subset of the available CresControl parameters are exposed.  You can add additional sensors, switches or numbers by editing `SENSOR_DEFINITIONS`, `SWITCH_DEFINITIONS` and `NUMBER_DEFINITIONS` in the respective platform modules.
 
-## Contributing
-
-Contributions are welcome!  Please open issues or pull requests on [GitHub](https://github.com/cre-science/crescontrol-homeassistant) if you encounter problems or have suggestions for improvements.
-
-## Credits
-
-This integration was developed based on the CresControl API documentation【26746980507384†L60-L109】 and the Home Assistant developer guidelines【303200071509333†L83-L116】.  Thanks to the Crescience team for providing an open API and to the Home Assistant community for excellent documentation and tooling.

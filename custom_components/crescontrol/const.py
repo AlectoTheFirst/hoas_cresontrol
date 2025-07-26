@@ -28,6 +28,9 @@ DEFAULT_UPDATE_INTERVAL: timedelta = timedelta(seconds=DEFAULT_UPDATE_INTERVAL_S
 
 # Configuration field names
 CONF_UPDATE_INTERVAL: str = "update_interval"
+CONF_WEBSOCKET_ENABLED: str = "websocket_enabled"
+CONF_WEBSOCKET_PORT: str = "websocket_port"
+CONF_WEBSOCKET_PATH: str = "websocket_path"
 
 # =============================================================================
 # Error Handling and Recovery Constants
@@ -92,6 +95,79 @@ ERROR_SEVERITY_LOW: str = "low"
 ERROR_SEVERITY_MEDIUM: str = "medium"
 ERROR_SEVERITY_HIGH: str = "high"
 ERROR_SEVERITY_CRITICAL: str = "critical"
+
+# =============================================================================
+# WebSocket Configuration Constants
+# =============================================================================
+
+# WebSocket connection settings (based on actual device testing)
+DEFAULT_WEBSOCKET_PORT: int = 81  # Default WebSocket port (same as HTTP port)
+DEFAULT_WEBSOCKET_PATH: str = "/websocket"  # Default WebSocket endpoint path (confirmed working)
+DEFAULT_WEBSOCKET_ENABLED: bool = False  # WebSocket disabled by default for backward compatibility
+
+# WebSocket connection timeouts and limits
+WEBSOCKET_CONNECT_TIMEOUT: int = 10  # WebSocket connection timeout in seconds
+WEBSOCKET_PING_INTERVAL: int = 30  # WebSocket ping interval in seconds
+WEBSOCKET_PING_TIMEOUT: int = 10  # WebSocket ping timeout in seconds
+WEBSOCKET_CLOSE_TIMEOUT: int = 5  # WebSocket close timeout in seconds
+WEBSOCKET_MAX_SIZE: int = 1024 * 1024  # Maximum WebSocket message size (1MB)
+WEBSOCKET_MAX_QUEUE: int = 32  # Maximum queued messages
+
+# WebSocket reconnection settings
+WEBSOCKET_RECONNECT_DELAY: float = 2.0  # Initial reconnection delay in seconds
+WEBSOCKET_RECONNECT_MAX_DELAY: float = 60.0  # Maximum reconnection delay
+WEBSOCKET_RECONNECT_MULTIPLIER: float = 1.5  # Backoff multiplier for reconnection delays
+WEBSOCKET_RECONNECT_MAX_ATTEMPTS: int = 0  # Maximum reconnection attempts (0 = unlimited)
+WEBSOCKET_RECONNECT_JITTER: float = 0.1  # Random jitter factor for reconnection delays
+
+# WebSocket health monitoring
+WEBSOCKET_HEARTBEAT_INTERVAL: int = 60  # Heartbeat interval in seconds
+WEBSOCKET_HEALTH_CHECK_TIMEOUT: int = 5  # Health check timeout in seconds
+WEBSOCKET_CONNECTION_GRACE_PERIOD: int = 30  # Grace period before marking connection as failed
+
+# WebSocket message types and protocols
+WEBSOCKET_MESSAGE_TYPE_STATUS: str = "status"
+WEBSOCKET_MESSAGE_TYPE_DATA: str = "data"
+WEBSOCKET_MESSAGE_TYPE_ERROR: str = "error"
+WEBSOCKET_MESSAGE_TYPE_PING: str = "ping"
+WEBSOCKET_MESSAGE_TYPE_PONG: str = "pong"
+WEBSOCKET_MESSAGE_TYPE_SUBSCRIBE: str = "subscribe"
+WEBSOCKET_MESSAGE_TYPE_UNSUBSCRIBE: str = "unsubscribe"
+
+# WebSocket subscription topics
+WEBSOCKET_TOPIC_ALL: str = "all"
+WEBSOCKET_TOPIC_FAN: str = "fan"
+WEBSOCKET_TOPIC_OUTPUTS: str = "outputs"
+WEBSOCKET_TOPIC_INPUTS: str = "inputs"
+WEBSOCKET_TOPIC_SWITCHES: str = "switches"
+WEBSOCKET_TOPIC_PWM: str = "pwm"
+
+# WebSocket status constants
+WEBSOCKET_STATUS_CONNECTING: str = "connecting"
+WEBSOCKET_STATUS_CONNECTED: str = "connected"
+WEBSOCKET_STATUS_DISCONNECTED: str = "disconnected"
+WEBSOCKET_STATUS_RECONNECTING: str = "reconnecting"
+WEBSOCKET_STATUS_ERROR: str = "error"
+WEBSOCKET_STATUS_DISABLED: str = "disabled"
+
+# WebSocket error codes
+WEBSOCKET_ERROR_CONNECTION_FAILED: str = "connection_failed"
+WEBSOCKET_ERROR_AUTHENTICATION_FAILED: str = "authentication_failed"
+WEBSOCKET_ERROR_PROTOCOL_ERROR: str = "protocol_error"
+WEBSOCKET_ERROR_MESSAGE_TOO_LARGE: str = "message_too_large"
+WEBSOCKET_ERROR_INVALID_MESSAGE: str = "invalid_message"
+WEBSOCKET_ERROR_SUBSCRIPTION_FAILED: str = "subscription_failed"
+
+# WebSocket performance and optimization
+WEBSOCKET_COMPRESSION_ENABLED: bool = True  # Enable WebSocket compression
+WEBSOCKET_BUFFER_SIZE: int = 8192  # WebSocket buffer size
+WEBSOCKET_READ_TIMEOUT: int = 30  # Read timeout for WebSocket messages
+WEBSOCKET_WRITE_TIMEOUT: int = 10  # Write timeout for WebSocket messages
+
+# WebSocket fallback behavior
+WEBSOCKET_FALLBACK_TO_HTTP: bool = True  # Fall back to HTTP polling if WebSocket fails
+WEBSOCKET_FALLBACK_DELAY: int = 60  # Delay before trying WebSocket again after fallback
+WEBSOCKET_HTTP_HYBRID_MODE: bool = True  # Allow both WebSocket and HTTP polling simultaneously
 
 # =============================================================================
 # Fan Entity Constants

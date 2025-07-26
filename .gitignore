@@ -1,3 +1,6 @@
 *.pdf
 .pytest_cache
 .DS_Store
+.kiro/
+.vscode/
+crescontrol-gui/

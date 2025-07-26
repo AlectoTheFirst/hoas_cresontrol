@@ -1,73 +1,50 @@
 """
 Sensor platform for CresControl.
 
-This module defines sensors representing the analog inputs (voltage readings)
-and the fan RPM of a CresControl device. These sensors rely on the
-DataUpdateCoordinator defined in ``__init__.py`` to fetch their values
-periodically. The raw string values returned by the device are cast to
-appropriate numeric types by the ``native_value`` property.
+Simplified sensor implementation focusing on core parameters only.
 """
 
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorStateClass,
 )
-from homeassistant.helpers.entity import EntityCategory
 from homeassistant.const import (
     UnitOfElectricPotential,
     REVOLUTIONS_PER_MINUTE,
-    UnitOfTemperature,
-    PERCENTAGE,
-    UnitOfPressure,
-    CONCENTRATION_PARTS_PER_MILLION,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.util import dt as dt_util
 
-from .const import (
-    DOMAIN,
-    ENTITY_UNAVAILABLE_THRESHOLD,
-    STATE_PRESERVATION_DURATION,
-    AVAILABILITY_GRACE_PERIOD,
-    DEVICE_STATUS_ONLINE,
-    DEVICE_STATUS_DEGRADED,
-    DEVICE_STATUS_OFFLINE,
-)
+from .const import DOMAIN
 
 
 _LOGGER = logging.getLogger(__name__)
 
 
-# Define the sensors we want to expose. Each entry maps a CresControl
-# parameter to a set of entity attributes. Additional sensors can be added
-# here without modifying the rest of the integration.
-SENSOR_DEFINITIONS: List[Dict[str, Any]] = [
+# Core sensor definitions - reduced to essential parameters only
+CORE_SENSORS = [
     {
         "key": "in-a:voltage",
-        "name": "In A Voltage",
+        "name": "Input A Voltage",
         "unit": UnitOfElectricPotential.VOLT,
         "device_class": SensorDeviceClass.VOLTAGE,
         "state_class": SensorStateClass.MEASUREMENT,
         "icon": "mdi:lightning-bolt",
-        "entity_category": EntityCategory.DIAGNOSTIC,
     },
     {
-        "key": "in-b:voltage",
-        "name": "In B Voltage",
+        "key": "in-b:voltage", 
+        "name": "Input B Voltage",
         "unit": UnitOfElectricPotential.VOLT,
         "device_class": SensorDeviceClass.VOLTAGE,
         "state_class": SensorStateClass.MEASUREMENT,
         "icon": "mdi:lightning-bolt",
-        "entity_category": EntityCategory.DIAGNOSTIC,
     },
     {
         "key": "fan:rpm",
@@ -76,250 +53,6 @@ SENSOR_DEFINITIONS: List[Dict[str, Any]] = [
         "device_class": None,
         "state_class": SensorStateClass.MEASUREMENT,
         "icon": "mdi:fan",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-    # Environmental sensors for crescontrol-0.2 parity
-    {
-        "key": "env:temperature",
-        "name": "Temperature",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "icon": "mdi:thermometer",
-        "entity_category": None,
-    },
-    {
-        "key": "env:humidity",
-        "name": "Humidity",
-        "unit": PERCENTAGE,
-        "device_class": SensorDeviceClass.HUMIDITY,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "icon": "mdi:water-percent",
-        "entity_category": None,
-    },
-    {
-        "key": "env:vpd",
-        "name": "VPD (Vapor Pressure Deficit)",
-        "unit": UnitOfPressure.KPA,
-        "device_class": None,  # No standard device class for VPD
-        "state_class": SensorStateClass.MEASUREMENT,
-        "icon": "mdi:gauge",
-        "entity_category": None,
-    },
-    {
-        "key": "env:co2",
-        "name": "CO2 Concentration",
-        "unit": CONCENTRATION_PARTS_PER_MILLION,
-        "device_class": SensorDeviceClass.CO2,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "icon": "mdi:molecule-co2",
-        "entity_category": None,
-    },
-]
-
-# System diagnostic sensors for CresControl device monitoring
-SYSTEM_SENSOR_DEFINITIONS: List[Dict[str, Any]] = [
-    {
-        "key": "type",
-        "name": "Device Type",
-        "unit": None,
-        "device_class": None,
-        "state_class": None,
-        "icon": "mdi:chip",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-    {
-        "key": "system:cpu-id",
-        "name": "CPU ID",
-        "unit": None,
-        "device_class": None,
-        "state_class": None,
-        "icon": "mdi:memory",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-    {
-        "key": "system:reset-cause",
-        "name": "Reset Cause",
-        "unit": None,
-        "device_class": None,
-        "state_class": None,
-        "icon": "mdi:restart",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-    {
-        "key": "system:frequency",
-        "name": "System Frequency",
-        "unit": "MHz",
-        "device_class": SensorDeviceClass.FREQUENCY,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "icon": "mdi:sine-wave",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-    {
-        "key": "system:heap:size",
-        "name": "Heap Size",
-        "unit": "bytes",
-        "device_class": SensorDeviceClass.DATA_SIZE,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "icon": "mdi:memory",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-    {
-        "key": "system:heap:free",
-        "name": "Free Heap",
-        "unit": "bytes",
-        "device_class": SensorDeviceClass.DATA_SIZE,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "icon": "mdi:memory",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-    {
-        "key": "system:heap:largest-block",
-        "name": "Largest Heap Block",
-        "unit": "bytes",
-        "device_class": SensorDeviceClass.DATA_SIZE,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "icon": "mdi:memory",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-    {
-        "key": "system:heap:watermark",
-        "name": "Heap Watermark",
-        "unit": "bytes",
-        "device_class": SensorDeviceClass.DATA_SIZE,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "icon": "mdi:memory",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-    {
-        "key": "system:debugging-enabled",
-        "name": "Debugging Enabled",
-        "unit": None,
-        "device_class": None,
-        "state_class": None,
-        "icon": "mdi:bug",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-    {
-        "key": "system:rescue-mode",
-        "name": "Rescue Mode",
-        "unit": None,
-        "device_class": None,
-        "state_class": None,
-        "icon": "mdi:lifebuoy",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-    {
-        "key": "system:serial:enabled",
-        "name": "Serial Enabled",
-        "unit": None,
-        "device_class": None,
-        "state_class": None,
-        "icon": "mdi:serial-port",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-    {
-        "key": "system:serial:baudrate",
-        "name": "Serial Baudrate",
-        "unit": "bps",
-        "device_class": SensorDeviceClass.DATA_RATE,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "icon": "mdi:speedometer",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-]
-
-# Diagnostic sensors for connection health monitoring
-DIAGNOSTIC_SENSOR_DEFINITIONS: List[Dict[str, Any]] = [
-    {
-        "key": "connection_status",
-        "name": "Connection Status",
-        "unit": None,
-        "device_class": None,
-        "state_class": None,
-        "icon": "mdi:connection",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-    {
-        "key": "success_rate",
-        "name": "Success Rate",
-        "unit": "%",
-        "device_class": None,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "icon": "mdi:percent",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-    {
-        "key": "consecutive_failures",
-        "name": "Consecutive Failures",
-        "unit": None,
-        "device_class": None,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "icon": "mdi:alert-octagon",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-    {
-        "key": "network_timeout_multiplier",
-        "name": "Network Timeout Multiplier",
-        "unit": None,
-        "device_class": None,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "icon": "mdi:timer",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-    {
-        "key": "last_error_type",
-        "name": "Last Error Type",
-        "unit": None,
-        "device_class": None,
-        "state_class": None,
-        "icon": "mdi:alert",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-    {
-        "key": "websocket_status",
-        "name": "WebSocket Status",
-        "unit": None,
-        "device_class": None,
-        "state_class": None,
-        "icon": "mdi:web",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-    {
-        "key": "websocket_enabled",
-        "name": "WebSocket Enabled",
-        "unit": None,
-        "device_class": None,
-        "state_class": None,
-        "icon": "mdi:toggle-switch",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-    {
-        "key": "websocket_connected",
-        "name": "WebSocket Connected",
-        "unit": None,
-        "device_class": None,
-        "state_class": None,
-        "icon": "mdi:lan-connect",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-    {
-        "key": "using_websocket_data",
-        "name": "Using WebSocket Data",
-        "unit": None,
-        "device_class": None,
-        "state_class": None,
-        "icon": "mdi:flash",
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
-    {
-        "key": "adaptive_polling",
-        "name": "Adaptive Polling",
-        "unit": None,
-        "device_class": None,
-        "state_class": None,
-        "icon": "mdi:speedometer",
-        "entity_category": EntityCategory.DIAGNOSTIC,
     },
 ]
 
@@ -334,25 +67,11 @@ async def async_setup_entry(
     coordinator = data["coordinator"]
     device_info = data["device_info"]
     
-    # Create regular sensor entities
+    # Create core sensor entities only
     entities = [
-        CresControlSensor(coordinator, device_info, definition) for definition in SENSOR_DEFINITIONS
+        CresControlSensor(coordinator, device_info, definition) 
+        for definition in CORE_SENSORS
     ]
-    
-    # Add system diagnostic sensor entities
-    system_entities = [
-        CresControlSensor(coordinator, device_info, definition)
-        for definition in SYSTEM_SENSOR_DEFINITIONS
-    ]
-    
-    # Add diagnostic sensor entities for connection health monitoring
-    diagnostic_entities = [
-        CresControlDiagnosticSensor(coordinator, device_info, definition)
-        for definition in DIAGNOSTIC_SENSOR_DEFINITIONS
-    ]
-    
-    entities.extend(system_entities)
-    entities.extend(diagnostic_entities)
     async_add_entities(entities)
 
 

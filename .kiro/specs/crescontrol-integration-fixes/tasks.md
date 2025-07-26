@@ -20,7 +20,7 @@
   - Implement basic error handling without complex health monitoring
   - _Requirements: 5.1, 5.2, 5.3_
 
-- [-] 4. Simplify and fix entity platform implementations
+- [x] 4. Simplify and fix entity platform implementations
   - Reduce sensor definitions to core parameters only
   - Remove complex error handling and state preservation from entities
   - Fix entity unique IDs and device associations

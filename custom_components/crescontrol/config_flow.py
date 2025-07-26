@@ -3,11 +3,7 @@ Configuration flow for the CresControl integration.
 
 This module implements the UI flow presented to the user when they add
 a new CresControl device in Home Assistant. The only required piece of
-information is the host (IP address or hostname) of the device. The flow
-verifies connectivity by performing a simple read request against the
-device. If the device cannot be reached, the user receives an error and
-is invited to correct the host entry. A unique ID equal to the host is
-used to prevent multiple configurations for the same device.
+information is the host (IP address or hostname) of the device.
 """
 
 from __future__ import annotations
@@ -23,7 +19,7 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from aiohttp import ClientTimeout
 
-from .api import CresControlClient, CresControlValidationError, CresControlNetworkError, CresControlDeviceError, CresControlWebSocketError
+from .api import CresControlClient, CresControlValidationError, CresControlNetworkError, CresControlDeviceError
 from .const import (
     DOMAIN,
     MIN_UPDATE_INTERVAL,
@@ -33,15 +29,11 @@ from .const import (
     CONF_WEBSOCKET_ENABLED,
     CONF_WEBSOCKET_PORT,
     CONF_WEBSOCKET_PATH,
-    DEFAULT_WEBSOCKET_ENABLED,
-    DEFAULT_WEBSOCKET_PORT,
-    DEFAULT_WEBSOCKET_PATH,
     CONFIG_FLOW_RETRY_ATTEMPTS,
     CONFIG_FLOW_RETRY_DELAY,
     CONFIG_FLOW_TIMEOUT,
     CONNECTION_TEST_TIMEOUT,
 )
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,14 +45,15 @@ class CresControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     MINOR_VERSION = 0
 
     async def async_step_user(self, user_input: Dict[str, Any] | None = None) -> FlowResult:
-        """Handle the initial step where the user enters the host with enhanced error handling."""
+        """Handle the initial step where the user enters the host."""
         errors: Dict[str, str] = {}
+        
         if user_input is not None:
             host: str = user_input["host"].strip()
             update_interval: int = user_input.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL_SECONDS)
-            websocket_enabled: bool = user_input.get(CONF_WEBSOCKET_ENABLED, DEFAULT_WEBSOCKET_ENABLED)
-            websocket_port: int = user_input.get(CONF_WEBSOCKET_PORT, DEFAULT_WEBSOCKET_PORT)
-            websocket_path: str = user_input.get(CONF_WEBSOCKET_PATH, DEFAULT_WEBSOCKET_PATH).strip()
+            websocket_enabled: bool = user_input.get(CONF_WEBSOCKET_ENABLED, True)
+            websocket_port: int = user_input.get(CONF_WEBSOCKET_PORT, 81)
+            websocket_path: str = user_input.get(CONF_WEBSOCKET_PATH, "/websocket").strip()
             
             # Validate update interval
             if not (MIN_UPDATE_INTERVAL <= update_interval <= MAX_UPDATE_INTERVAL):
@@ -73,17 +66,15 @@ class CresControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 if not websocket_path.startswith("/"):
                     errors[CONF_WEBSOCKET_PATH] = "invalid_websocket_path"
             
-            # Validate host format and connection with enhanced resilience
+            # Validate host format and connection
             if not errors:
                 try:
                     # Check if this host is already configured
                     await self.async_set_unique_id(host)
                     self._abort_if_unique_id_configured()
                     
-                    # Perform connection validation with retry logic
-                    await self._validate_connection_with_retry(
-                        host, websocket_enabled, websocket_port, websocket_path
-                    )
+                    # Perform connection validation
+                    await self._validate_connection(host)
                     
                 except CresControlValidationError as err:
                     _LOGGER.warning("Invalid host format for CresControl: %s - %s", host, err)
@@ -94,9 +85,6 @@ class CresControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 except CresControlDeviceError as err:
                     _LOGGER.warning("Device error with CresControl at %s: %s", host, err)
                     errors["base"] = "device_error"
-                except CresControlWebSocketError as err:
-                    _LOGGER.warning("WebSocket error with CresControl at %s: %s", host, err)
-                    errors["base"] = "websocket_error"
                 except TimeoutError as err:
                     _LOGGER.warning("Timeout connecting to CresControl at %s: %s", host, err)
                     errors["base"] = "timeout"
@@ -116,116 +104,6 @@ class CresControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         }
                     )
 
-    async def _validate_connection_with_retry(
-        self,
-        host: str,
-        websocket_enabled: bool = False,
-        websocket_port: int = DEFAULT_WEBSOCKET_PORT,
-        websocket_path: str = DEFAULT_WEBSOCKET_PATH
-    ) -> None:
-        """Validate connection to CresControl device with retry logic and enhanced error handling."""
-        session = async_get_clientsession(self.hass)
-        client = CresControlClient(
-            host,
-            session,
-            timeout=CONFIG_FLOW_TIMEOUT,
-            websocket_enabled=websocket_enabled,
-            websocket_port=websocket_port,
-            websocket_path=websocket_path
-        )
-        
-        last_exception = None
-        
-        for attempt in range(CONFIG_FLOW_RETRY_ATTEMPTS):
-            try:
-                _LOGGER.debug(
-                    "CresControl config flow connection attempt %d/%d for %s",
-                    attempt + 1, CONFIG_FLOW_RETRY_ATTEMPTS, host
-                )
-                
-                # Test connection with a quick timeout
-                test_timeout = CONNECTION_TEST_TIMEOUT if attempt == 0 else CONFIG_FLOW_TIMEOUT
-                client._timeout = ClientTimeout(total=test_timeout)
-                
-                # Use a simple read command to ensure the device responds
-                # We don't rely on a specific value being returned; absence of an exception is sufficient
-                await client.get_value("in-a:voltage")
-                
-                # If WebSocket is enabled, also test WebSocket connectivity
-                if websocket_enabled:
-                    _LOGGER.debug("Testing WebSocket connection for config flow")
-                    websocket_test_success = await client.test_websocket_connection()
-                    if not websocket_test_success:
-                        _LOGGER.warning("WebSocket connection test failed, but HTTP works")
-                        # Note: We don't fail the entire config if WebSocket fails,
-                        # as HTTP polling can still work
-                
-                _LOGGER.debug("CresControl config flow connection successful on attempt %d", attempt + 1)
-                return  # Success - exit retry loop
-                
-            except CresControlNetworkError as err:
-                last_exception = err
-                _LOGGER.debug(
-                    "CresControl config flow network error on attempt %d/%d: %s",
-                    attempt + 1, CONFIG_FLOW_RETRY_ATTEMPTS, err
-                )
-                
-                # For network errors, retry with progressive delay
-                if attempt < CONFIG_FLOW_RETRY_ATTEMPTS - 1:
-                    delay = CONFIG_FLOW_RETRY_DELAY * (attempt + 1)
-                    _LOGGER.debug("Retrying CresControl connection in %.1f seconds", delay)
-                    await asyncio.sleep(delay)
-                    
-            except CresControlDeviceError as err:
-                last_exception = err
-                _LOGGER.debug(
-                    "CresControl config flow device error on attempt %d/%d: %s",
-                    attempt + 1, CONFIG_FLOW_RETRY_ATTEMPTS, err
-                )
-                
-                # For device errors, shorter retry delay
-                if attempt < CONFIG_FLOW_RETRY_ATTEMPTS - 1:
-                    delay = CONFIG_FLOW_RETRY_DELAY * 0.5
-                    _LOGGER.debug("Retrying CresControl connection in %.1f seconds", delay)
-                    await asyncio.sleep(delay)
-                    
-            except CresControlValidationError:
-                # Validation errors don't benefit from retries
-                raise
-                
-            except asyncio.TimeoutError as err:
-                last_exception = TimeoutError(f"Connection timeout after {test_timeout}s")
-                _LOGGER.debug(
-                    "CresControl config flow timeout on attempt %d/%d",
-                    attempt + 1, CONFIG_FLOW_RETRY_ATTEMPTS
-                )
-                
-                # For timeouts, use longer delay and increase timeout for next attempt
-                if attempt < CONFIG_FLOW_RETRY_ATTEMPTS - 1:
-                    delay = CONFIG_FLOW_RETRY_DELAY * 1.5
-                    _LOGGER.debug("Retrying CresControl connection in %.1f seconds", delay)
-                    await asyncio.sleep(delay)
-                    
-            except Exception as err:
-                last_exception = err
-                _LOGGER.debug(
-                    "CresControl config flow unexpected error on attempt %d/%d: %s",
-                    attempt + 1, CONFIG_FLOW_RETRY_ATTEMPTS, err
-                )
-                # Don't retry on unexpected errors
-                break
-        
-        # All attempts failed - raise the last exception
-        _LOGGER.error(
-            "CresControl config flow failed after %d attempts for %s: %s",
-            CONFIG_FLOW_RETRY_ATTEMPTS, host, last_exception
-        )
-        
-        if last_exception:
-            raise last_exception
-        else:
-            raise CresControlNetworkError("Connection validation failed")
-
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema({
@@ -234,15 +112,23 @@ class CresControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Coerce(int),
                     vol.Range(min=MIN_UPDATE_INTERVAL, max=MAX_UPDATE_INTERVAL)
                 ),
-                vol.Optional(CONF_WEBSOCKET_ENABLED, default=DEFAULT_WEBSOCKET_ENABLED): bool,
-                vol.Optional(CONF_WEBSOCKET_PORT, default=DEFAULT_WEBSOCKET_PORT): vol.All(
+                vol.Optional(CONF_WEBSOCKET_ENABLED, default=True): bool,
+                vol.Optional(CONF_WEBSOCKET_PORT, default=81): vol.All(
                     vol.Coerce(int),
                     vol.Range(min=1, max=65535)
                 ),
-                vol.Optional(CONF_WEBSOCKET_PATH, default=DEFAULT_WEBSOCKET_PATH): str,
+                vol.Optional(CONF_WEBSOCKET_PATH, default="/websocket"): str,
             }),
             errors=errors,
         )
+
+    async def _validate_connection(self, host: str) -> None:
+        """Validate connection to CresControl device."""
+        session = async_get_clientsession(self.hass)
+        client = CresControlClient(host, session, timeout=CONFIG_FLOW_TIMEOUT)
+        
+        # Use a simple read command to ensure the device responds
+        await client.get_value("in-a:voltage")
 
     @staticmethod
     def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> CresControlOptionsFlow:
@@ -263,9 +149,9 @@ class CresControlOptionsFlow(config_entries.OptionsFlow):
         
         if user_input is not None:
             update_interval: int = user_input[CONF_UPDATE_INTERVAL]
-            websocket_enabled: bool = user_input.get(CONF_WEBSOCKET_ENABLED, DEFAULT_WEBSOCKET_ENABLED)
-            websocket_port: int = user_input.get(CONF_WEBSOCKET_PORT, DEFAULT_WEBSOCKET_PORT)
-            websocket_path: str = user_input.get(CONF_WEBSOCKET_PATH, DEFAULT_WEBSOCKET_PATH).strip()
+            websocket_enabled: bool = user_input.get(CONF_WEBSOCKET_ENABLED, True)
+            websocket_port: int = user_input.get(CONF_WEBSOCKET_PORT, 81)
+            websocket_path: str = user_input.get(CONF_WEBSOCKET_PATH, "/websocket").strip()
             
             # Validate update interval
             if not (MIN_UPDATE_INTERVAL <= update_interval <= MAX_UPDATE_INTERVAL):
@@ -293,9 +179,9 @@ class CresControlOptionsFlow(config_entries.OptionsFlow):
 
         # Get current values or defaults
         current_interval = self.config_entry.data.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL_SECONDS)
-        current_websocket_enabled = self.config_entry.data.get(CONF_WEBSOCKET_ENABLED, DEFAULT_WEBSOCKET_ENABLED)
-        current_websocket_port = self.config_entry.data.get(CONF_WEBSOCKET_PORT, DEFAULT_WEBSOCKET_PORT)
-        current_websocket_path = self.config_entry.data.get(CONF_WEBSOCKET_PATH, DEFAULT_WEBSOCKET_PATH)
+        current_websocket_enabled = self.config_entry.data.get(CONF_WEBSOCKET_ENABLED, True)
+        current_websocket_port = self.config_entry.data.get(CONF_WEBSOCKET_PORT, 81)
+        current_websocket_path = self.config_entry.data.get(CONF_WEBSOCKET_PATH, "/websocket")
 
         return self.async_show_form(
             step_id="init",

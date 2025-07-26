@@ -32,6 +32,11 @@ CONF_WEBSOCKET_ENABLED: str = "websocket_enabled"
 CONF_WEBSOCKET_PORT: str = "websocket_port"
 CONF_WEBSOCKET_PATH: str = "websocket_path"
 
+# WebSocket configuration defaults
+DEFAULT_WEBSOCKET_ENABLED: bool = True
+DEFAULT_WEBSOCKET_PORT: int = 81
+DEFAULT_WEBSOCKET_PATH: str = "/websocket"
+
 # =============================================================================
 # Error Handling and Recovery Constants
 # =============================================================================
@@ -48,6 +53,12 @@ DEFAULT_TIMEOUT: int = 30  # Default HTTP request timeout in seconds
 CONNECT_TIMEOUT: int = 10  # Connection timeout in seconds
 READ_TIMEOUT: int = 30  # Read timeout in seconds
 TOTAL_TIMEOUT: int = 45  # Total timeout including retries
+
+# Config flow constants
+CONFIG_FLOW_RETRY_ATTEMPTS: int = 2
+CONFIG_FLOW_RETRY_DELAY: float = 1.0
+CONFIG_FLOW_TIMEOUT: int = 15
+CONNECTION_TEST_TIMEOUT: int = 10
 
 # Progressive timeout configuration for degraded connections
 TIMEOUT_PROGRESSIVE_MULTIPLIER: float = 1.5  # Multiplier for progressive timeouts

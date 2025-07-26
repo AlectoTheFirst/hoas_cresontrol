@@ -1,38 +1,21 @@
 """
 Switch platform for CresControl.
 
-This module defines boolean switch entities corresponding to the fan and
-various power rails on the CresControl. Each entity exposes the state of
-the underlying parameter and allows toggling it on or off. When the user
-changes the state in Home Assistant, a write operation is issued via the
-client and followed by a refresh of all entities.
+Simplified switch implementation focusing on core controls only.
 """
 
 from __future__ import annotations
 
-import asyncio
 import logging
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.helpers.entity import EntityCategory
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.util import dt as dt_util
 from homeassistant.exceptions import HomeAssistantError
 
-from .const import (
-    DOMAIN,
-    ENTITY_UNAVAILABLE_THRESHOLD,
-    STATE_PRESERVATION_DURATION,
-    AVAILABILITY_GRACE_PERIOD,
-    DEVICE_STATUS_ONLINE,
-    DEVICE_STATUS_DEGRADED,
-    DEVICE_STATUS_OFFLINE,
-)
-from .api import CresControlError, CresControlNetworkError, CresControlDeviceError
+from .const import DOMAIN
 
 
 _LOGGER = logging.getLogger(__name__)

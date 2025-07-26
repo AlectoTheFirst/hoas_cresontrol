@@ -145,9 +145,9 @@ class CresControlClient:
         host: str,
         session: ClientSession,
         timeout: int = 30,
-        websocket_enabled: bool = False,
-        websocket_port: int = 8080,
-        websocket_path: str = "/ws"
+        websocket_enabled: bool = True,
+        websocket_port: int = 81,
+        websocket_path: str = "/websocket"
     ) -> None:
         """Initialize the client.
 
@@ -174,7 +174,7 @@ class CresControlClient:
             If the host format is invalid.
         """
         self._validate_host(host)
-        self._base_url: str = f"http://{host}"
+        self._base_url: str = f"http://{host}:80"
         self._session: ClientSession = session
         self._base_timeout: int = timeout
         self._timeout: ClientTimeout = ClientTimeout(total=timeout)

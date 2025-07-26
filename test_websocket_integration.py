@@ -14,7 +14,7 @@ from typing import Dict, Any, Optional
 class SimpleWebSocketClient:
     """Simplified WebSocket client for testing CresControl device."""
     
-    def __init__(self, host: str, port: int = 8080, path: str = "/websocket"):
+    def __init__(self, host: str, port: int = 81, path: str = "/websocket"):
         self.host = host
         self.port = port 
         self.path = path
@@ -211,10 +211,8 @@ async def test_websocket_functionality():
     print("🔌 TESTING WEBSOCKET FUNCTIONALITY")
     print("="*60)
     
-    # Try different common WebSocket ports/paths
+    # Try different WebSocket paths on port 81
     test_configs = [
-        {"port": 8080, "path": "/websocket"},
-        {"port": 8080, "path": "/ws"},
         {"port": 81, "path": "/websocket"},
         {"port": 81, "path": "/ws"},
     ]
@@ -271,7 +269,7 @@ async def test_hybrid_operation():
     # For now, just demonstrate the concept
     
     http_client = SimpleHTTPClient("192.168.105.15", 81)
-    ws_client = SimpleWebSocketClient("192.168.105.15", 8080, "/websocket")
+    ws_client = SimpleWebSocketClient("192.168.105.15", 81, "/websocket")
     
     try:
         print("\n📡 Testing HTTP baseline...")

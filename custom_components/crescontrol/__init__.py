@@ -35,6 +35,8 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.util import dt as dt_util
 
 from .api import CresControlClient, CresControlError, CresControlNetworkError, CresControlDeviceError
+from .websocket_client import CresControlWebSocketClient, CresControlWebSocketError
+from .hybrid_coordinator import CresControlHybridCoordinator
 from .const import (
     DOMAIN,
     DEFAULT_UPDATE_INTERVAL,
@@ -606,21 +608,37 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     websocket_path = entry.data.get(CONF_WEBSOCKET_PATH, DEFAULT_WEBSOCKET_PATH)
     
     session = async_get_clientsession(hass)
-    client = CresControlClient(
-        host,
-        session,
-        websocket_enabled=websocket_enabled,
-        websocket_port=websocket_port,
-        websocket_path=websocket_path
-    )
-
-    # Create enhanced coordinator with health monitoring and error recovery
-    coordinator = CresControlCoordinator(
-        hass=hass,
-        client=client,
-        host=host,
-        update_interval=update_interval,
-    )
+    
+    # Create HTTP client for fallback communication
+    http_client = CresControlClient(host, session)
+    
+    # Create WebSocket client for real-time data (if enabled)
+    websocket_client = None
+    if websocket_enabled:
+        websocket_client = CresControlWebSocketClient(
+            host=host,
+            session=session,
+            port=websocket_port,
+            path=websocket_path
+        )
+    
+    # Create hybrid coordinator that prioritizes WebSocket with HTTP fallback
+    if websocket_client:
+        coordinator = CresControlHybridCoordinator(
+            hass=hass,
+            http_client=http_client,
+            websocket_client=websocket_client,
+            host=host,
+            update_interval=update_interval,
+        )
+    else:
+        # Fall back to HTTP-only coordinator for backward compatibility
+        coordinator = CresControlCoordinator(
+            hass=hass,
+            client=http_client,
+            host=host,
+            update_interval=update_interval,
+        )
 
     try:
         # Perform initial refresh with enhanced error handling
@@ -669,10 +687,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
-        "client": client,
+        "http_client": http_client,
+        "websocket_client": websocket_client,
         "coordinator": coordinator,
         "device_info": device_info,
-        "health_tracker": coordinator.health_tracker,
     }
 
     # Set up options update listener

@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Totoro-1 Grow Controller</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(ellipse at top, #0f0c29, #24243e, #302b63);
+            background-attachment: fixed;
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 226, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 40px 30px;
+            position: relative;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 50px;
+            padding: 30px 40px;
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo-orb {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow:
+                0 0 40px rgba(102, 126, 234, 0.6),
+                inset 0 2px 10px rgba(255, 255, 255, 0.2);
+            animation: gentleFloat 6s ease-in-out infinite;
+        }
+
+        .logo-orb::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c);
+            border-radius: 50%;
+            z-index: -1;
+            animation: rotate 8s linear infinite;
+        }
+
+        .logo-orb span {
+            font-size: 32px;
+            z-index: 1;
+        }
+
+        @keyframes gentleFloat {
+
+            0%,
+            100% {
+                transform: translateY(0px) scale(1);
+            }
+
+            50% {
+                transform: translateY(-8px) scale(1.05);
+            }
+        }
+
+        @keyframes rotate {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .device-info h1 {
+            font-size: 42px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .device-subtitle {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 400;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 32px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 2px solid rgba(16, 185, 129, 0.3);
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.2);
+        }
+
+        .status-orb {
+            width: 16px;
+            height: 16px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 20px #10b981;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 0.8;
+            }
+        }
+
+        .main-dashboard {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .sensors-paradise {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 35px;
+            padding: 40px;
+            box-shadow:
+                0 20px 40px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sensors-paradise::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+
+        .section-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: rgba(255, 255, 255, 0.95);
+            text-align: center;
+        }
+
+        .sensors-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+        }
+
+        .sensor-jewel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 25px;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+        }
+
+        .sensor-jewel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.6s;
+        }
+
+        .sensor-jewel:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow:
+                0 25px 50px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.2);
+        }
+
+        .sensor-jewel:hover::before {
+            left: 100%;
+        }
+
+        .sensor-icon-wrapper {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .temp-jewel {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+        }
+
+        .humidity-jewel {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+
+        .co2-jewel {
+            background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%);
+        }
+
+        .pressure-jewel {
+            background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+        }
+
+        .sensor-value {
+            font-size: 36px;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .sensor-label {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .chart-sanctuary {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 35px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mystical-chart {
+            flex: 1;
+            background: linear-gradient(135deg,
+                    rgba(102, 126, 234, 0.1) 0%,
+                    rgba(118, 75, 162, 0.1) 50%,
+                    rgba(240, 147, 251, 0.1) 100%);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chart-waves {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background:
+                linear-gradient(45deg, transparent 30%, rgba(102, 126, 234, 0.1) 50%, transparent 70%),
+                linear-gradient(-45deg, transparent 30%, rgba(118, 75, 162, 0.1) 50%, transparent 70%);
+            animation: waves 8s ease-in-out infinite;
+        }
+
+        @keyframes waves {
+
+            0%,
+            100% {
+                transform: translateX(-10px) translateY(-10px);
+            }
+
+            50% {
+                transform: translateX(10px) translateY(10px);
+            }
+        }
+
+        .chart-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: glow 4s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+
+            0%,
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 0.8;
+            }
+        }
+
+        .controls-universe {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 35px;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .controls-galaxy {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .control-star {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 25px 15px;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-star::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            transition: all 0.4s ease;
+            transform: translate(-50%, -50%);
+        }
+
+        .control-star.active {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
+            transform: scale(1.05);
+        }
+
+        .control-star.active::before {
+            width: 100%;
+            height: 100%;
+        }
+
+        .control-star:hover:not(.active) {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .control-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .control-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .control-star.active .control-value {
+            color: #10b981;
+            text-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+        }
+
+        .voltage-cosmos {
+            display: flex;
+            justify-content: space-around;
+            margin: 40px 0;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .voltage-constellation {
+            text-align: center;
+            position: relative;
+        }
+
+        .voltage-value {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .voltage-label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .cosmic-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        .cosmic-btn {
+            padding: 18px 36px;
+            border: none;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .cosmic-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.6s;
+        }
+
+        .cosmic-btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary-cosmic {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary-cosmic:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-secondary-cosmic {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary-cosmic:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+        }
+
+        .particle:nth-child(odd) {
+            background: rgba(102, 126, 234, 0.5);
+        }
+
+        .particle:nth-child(3n) {
+            background: rgba(240, 147, 251, 0.5);
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) translateX(0px) rotate(0deg);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 1;
+            }
+
+            90% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-100px) translateX(100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .main-dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+
+            .sensors-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .controls-galaxy {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            }
+
+            .cosmic-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="floating-particles" id="particles"></div>
+
+    <div class="container">
+        <header class="header">
+            <div class="logo-section">
+                <div class="logo-orb">
+                    <span>🌱</span>
+                </div>
+                <div class="device-info">
+                    <h1>Totoro-1</h1>
+                    <div class="device-subtitle">Advanced Grow Controller</div>
+                </div>
+            </div>
+            <div class="status-pill">
+                <div class="status-orb"></div>
+                System Online
+            </div>
+        </header>
+
+        <div class="main-dashboard">
+            <div class="sensors-paradise">
+                <h2 class="section-title">Environmental Matrix</h2>
+                <div class="sensors-grid">
+                    <div class="sensor-jewel">
+                        <div class="sensor-icon-wrapper temp-jewel">🌡️</div>
+                        <div class="sensor-value">26.8°C</div>
+                        <div class="sensor-label">Temperature</div>
+                    </div>
+                    <div class="sensor-jewel">
+                        <div class="sensor-icon-wrapper humidity-jewel">💧</div>
+                        <div class="sensor-value">50.9%</div>
+                        <div class="sensor-label">Humidity</div>
+                    </div>
+                    <div class="sensor-jewel">
+                        <div class="sensor-icon-wrapper co2-jewel">🌬️</div>
+                        <div class="sensor-value">670ppm</div>
+                        <div class="sensor-label">CO₂ Level</div>
+                    </div>
+                    <div class="sensor-jewel">
+                        <div class="sensor-icon-wrapper pressure-jewel">📊</div>
+                        <div class="sensor-value">1.7kPa</div>
+                        <div class="sensor-label">Pressure</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-sanctuary">
+                <h2 class="section-title">Temporal Insights</h2>
+                <div class="mystical-chart">
+                    <div class="chart-waves"></div>
+                    <div class="chart-glow"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-universe">
+            <h2 class="section-title">Command Center</h2>
+            <div class="controls-galaxy">
+                <div class="control-star active">
+                    <div class="control-label">Power A</div>
+                    <div class="control-value">9.5V</div>
+                </div>
+                <div class="control-star">
+                    <div class="control-label">Power B</div>
+                    <div class="control-value">0.0V</div>
+                </div>
+                <div class="control-star">
+                    <div class="control-label">Power C</div>
+                    <div class="control-value">0.0V</div>
+                </div>
+                <div class="control-star">
+                    <div class="control-label">Output A</div>
+                    <div class="control-value">0.0V</div>
+                </div>
+                <div class="control-star">
+                    <div class="control-label">Output B</div>
+                    <div class="control-value">0.0V</div>
+                </div>
+                <div class="control-star">
+                    <div class="control-label">Output C</div>
+                    <div class="control-value">0.0V</div>
+                </div>
+                <div class="control-star">
+                    <div class="control-label">Output D</div>
+                    <div class="control-value">0.0V</div>
+                </div>
+                <div class="control-star">
+                    <div class="control-label">Fan A</div>
+                    <div class="control-value">Off</div>
+                </div>
+                <div class="control-star">
+                    <div class="control-label">Fan B</div>
+                    <div class="control-value">Off</div>
+                </div>
+                <div class="control-star">
+                    <div class="control-label">PC Fan</div>
+                    <div class="control-value">Off</div>
+                </div>
+            </div>
+
+            <div class="voltage-cosmos">
+                <div class="voltage-constellation">
+                    <div class="voltage-value">7.0V</div>
+                    <div class="voltage-label">Main Supply</div>
+                </div>
+                <div class="voltage-constellation">
+                    <div class="voltage-value">0.0V</div>
+                    <div class="voltage-label">Backup Power</div>
+                </div>
+            </div>
+
+            <div class="cosmic-buttons">
+                <button class="cosmic-btn btn-primary-cosmic">Configure Matrix</button>
+                <button class="cosmic-btn btn-secondary-cosmic">System Reset</button>
+                <button class="cosmic-btn btn-secondary-cosmic">Export Data</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + 'vw';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Interactive controls
+        document.querySelectorAll('.control-star').forEach((star, index) => {
+            star.addEventListener('click', function () {
+                if (!this.classList.contains('active')) {
+                    this.classList.add('active');
+                    const value = this.querySelector('.control-value');
+                    if (value.textContent.includes('V')) {
+                        value.textContent = (Math.random() * 10 + 2).toFixed(1) + 'V';
+                    } else {
+                        value.textContent = 'On';
+                    }
+                } else {
+                    this.classList.remove('active');
+                    const value = this.querySelector('.control-value');
+                    if (value.textContent.includes('V')) {
+                        value.textContent = '0.0V';
+                    } else {
+                        value.textContent = 'Off';
+                    }
+                }
+            });
+        });
+
+        // Simulate real-time sensor updates
+        function updateSensors() {
+            const sensors = [
+                { selector: '.sensor-jewel:nth-child(1) .sensor-value', base: 26.8, suffix: '°C', range: 0.5 },
+                { selector: '.sensor-jewel:nth-child(2) .sensor-value', base: 50.9, suffix: '%', range: 1.0 },
+                { selector: '.sensor-jewel:nth-child(3) .sensor-value', base: 670, suffix: 'ppm', range: 10 },
+                { selector: '.sensor-jewel:nth-child(4) .sensor-value', base: 1.7, suffix: 'kPa', range: 0.1 }
+            ];
+
+            sensors.forEach(sensor => {
+                const element = document.querySelector(sensor.selector);
+                const newValue = sensor.base + (Math.random() - 0.5) * sensor.range;
+                element.textContent = newValue.toFixed(sensor.suffix === 'ppm' ? 0 : 1) + sensor.suffix;
+            });
+        }
+
+        // Initialize
+        createParticles();
+        setInterval(updateSensors, 3000);
+
+        // Add some sparkle to button clicks
+        document.querySelectorAll('.cosmic-btn').forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                const ripple = document.createElement('div');
+                ripple.style.position = 'absolute';
+                ripple.style.borderRadius = '50%';
+                ripple.style.background = 'rgba(255, 255, 255, 0.6)';
+                ripple.style.transform = 'scale(0)';
+                ripple.style.animation = 'ripple 0.6s linear';
+                ripple.style.left = (e.clientX - e.target.offsetLeft) + 'px';
+                ripple.style.top = (e.clientY - e.target.offsetTop) + 'px';
+                ripple.style.width = ripple.style.height = '20px';
+
+                this.appendChild(ripple);
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            });
+        });
+
+        // Add CSS for ripple effect
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes ripple {
+                to {
+                    transform: scale(4);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+
+</html>

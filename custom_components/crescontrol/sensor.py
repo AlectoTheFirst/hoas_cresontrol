@@ -93,10 +93,32 @@ class CresControlSensor(CoordinatorEntity, SensorEntity):
     def device_info(self) -> Dict[str, Any]:
         """Return device information to link this entity with the device."""
         return self._device_info
+    
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        """Return additional state attributes for diagnostics."""
+        attributes = {}
+        
+        # Add data source information for diagnostics
+        if hasattr(self.coordinator, 'get_connection_status'):
+            connection_status = self.coordinator.get_connection_status()
+            attributes.update({
+                "data_source": "websocket" if connection_status.get("using_websocket_data") else "http",
+                "websocket_connected": connection_status.get("websocket_connected", False),
+                "last_update_source": "websocket" if connection_status.get("using_websocket_data") else "http_polling"
+            })
+        
+        # Add raw value for debugging
+        if self.coordinator.data:
+            raw_value = self.coordinator.data.get(self._key)
+            if raw_value is not None:
+                attributes["raw_value"] = str(raw_value)
+        
+        return attributes
 
     @property
     def native_value(self) -> Any:
-        """Return the native value of the sensor."""
+        """Return the native value of the sensor with enhanced error handling and validation."""
         if not self.coordinator.data:
             return None
             
@@ -104,21 +126,105 @@ class CresControlSensor(CoordinatorEntity, SensorEntity):
         if raw_value is None:
             return None
             
-        # Simple value parsing
+        # Enhanced value parsing with error response handling
         try:
             if isinstance(raw_value, str):
                 raw_value = raw_value.strip()
                 if not raw_value:
                     return None
-                    
-                # Try to convert to float or int
-                if "." in raw_value:
-                    return float(raw_value)
-                else:
-                    return int(raw_value)
-            else:
+                
+                # Handle JSON error responses gracefully (especially for fan:rpm)
+                if raw_value.startswith('{"error"'):
+                    _LOGGER.debug("Received error response for %s: %s", self._key, raw_value)
+                    # For fan RPM, return 0 when fan is not connected/responding
+                    if self._key == "fan:rpm":
+                        return 0
+                    return None
+                
+                # Handle other error indicators
+                if raw_value.lower() in ['error', 'n/a', 'unavailable', 'unknown']:
+                    _LOGGER.debug("Received error indicator for %s: %s", self._key, raw_value)
+                    return None
+                
+                # Parse numeric values with validation
+                parsed_value = self._parse_numeric_value(raw_value)
+                if parsed_value is not None:
+                    return self._validate_sensor_value(parsed_value)
+                
+                # If not numeric, return the string value
                 return raw_value
                 
+            else:
+                # Handle non-string values
+                if isinstance(raw_value, (int, float)):
+                    return self._validate_sensor_value(raw_value)
+                return raw_value
+                
+        except (ValueError, TypeError) as err:
+            _LOGGER.warning("Failed to parse sensor value for %s: %s (error: %s)", 
+                          self._key, raw_value, err)
+            return None
+    
+    def _parse_numeric_value(self, value_str: str) -> Any:
+        """Parse a string value to numeric type with proper handling.
+        
+        Args:
+            value_str: String value to parse
+            
+        Returns:
+            Parsed numeric value or None if parsing fails
+        """
+        try:
+            # Try to convert to float first (handles both int and float strings)
+            if "." in value_str or "e" in value_str.lower():
+                return float(value_str)
+            else:
+                # For integer strings, try int first for better type accuracy
+                try:
+                    return int(value_str)
+                except ValueError:
+                    # Fallback to float if int parsing fails
+                    return float(value_str)
         except (ValueError, TypeError):
-            _LOGGER.debug("Failed to parse sensor value for %s: %s", self._key, raw_value)
+            return None
+    
+    def _validate_sensor_value(self, value: Any) -> Any:
+        """Validate sensor value based on sensor type and apply reasonable bounds.
+        
+        Args:
+            value: Parsed numeric value
+            
+        Returns:
+            Validated value or None if validation fails
+        """
+        if value is None:
+            return None
+        
+        try:
+            # Voltage sensors validation
+            if self._key in ["in-a:voltage", "in-b:voltage"]:
+                if isinstance(value, (int, float)):
+                    # Reasonable voltage range: -15V to +15V
+                    if -15.0 <= value <= 15.0:
+                        return round(float(value), 2)  # Round to 2 decimal places
+                    else:
+                        _LOGGER.warning("Voltage value %s out of range for %s", value, self._key)
+                        return None
+            
+            # Fan RPM validation
+            elif self._key == "fan:rpm":
+                if isinstance(value, (int, float)):
+                    # Reasonable RPM range: 0 to 10000 RPM
+                    if 0 <= value <= 10000:
+                        return int(value)  # RPM should be integer
+                    else:
+                        _LOGGER.warning("RPM value %s out of range for %s", value, self._key)
+                        return None
+            
+            # Default: return the value as-is if no specific validation
+            return value
+            
+        except (ValueError, TypeError) as err:
+            _LOGGER.warning("Value validation failed for %s: %s (error: %s)", 
+                          self._key, value, err)
             return None

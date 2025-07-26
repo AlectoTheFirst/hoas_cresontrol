@@ -1,9 +1,8 @@
 """
 Configuration flow for the CresControl integration.
 
-This module implements the UI flow presented to the user when they add
-a new CresControl device in Home Assistant. The only required piece of
-information is the host (IP address or hostname) of the device.
+Simplified configuration flow that only requires the host IP address
+and performs basic connectivity testing.
 """
 
 from __future__ import annotations
@@ -17,23 +16,10 @@ from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from aiohttp import ClientTimeout
+from aiohttp import ClientTimeout, ClientError
 
-from .api import CresControlClient, CresControlValidationError, CresControlNetworkError, CresControlDeviceError
-from .const import (
-    DOMAIN,
-    MIN_UPDATE_INTERVAL,
-    MAX_UPDATE_INTERVAL,
-    DEFAULT_UPDATE_INTERVAL_SECONDS,
-    CONF_UPDATE_INTERVAL,
-    CONF_WEBSOCKET_ENABLED,
-    CONF_WEBSOCKET_PORT,
-    CONF_WEBSOCKET_PATH,
-    CONFIG_FLOW_RETRY_ATTEMPTS,
-    CONFIG_FLOW_RETRY_DELAY,
-    CONFIG_FLOW_TIMEOUT,
-    CONNECTION_TEST_TIMEOUT,
-)
+from .simple_http_client import SimpleCresControlHTTPClient
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -50,85 +36,81 @@ class CresControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         
         if user_input is not None:
             host: str = user_input["host"].strip()
-            update_interval: int = user_input.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL_SECONDS)
-            websocket_enabled: bool = user_input.get(CONF_WEBSOCKET_ENABLED, True)
-            websocket_port: int = user_input.get(CONF_WEBSOCKET_PORT, 81)
-            websocket_path: str = user_input.get(CONF_WEBSOCKET_PATH, "/websocket").strip()
             
-            # Validate update interval
-            if not (MIN_UPDATE_INTERVAL <= update_interval <= MAX_UPDATE_INTERVAL):
-                errors[CONF_UPDATE_INTERVAL] = "invalid_update_interval"
-            
-            # Validate WebSocket configuration
-            if websocket_enabled:
-                if not (1 <= websocket_port <= 65535):
-                    errors[CONF_WEBSOCKET_PORT] = "invalid_websocket_port"
-                if not websocket_path.startswith("/"):
-                    errors[CONF_WEBSOCKET_PATH] = "invalid_websocket_path"
-            
-            # Validate host format and connection
-            if not errors:
+            # Basic host validation
+            if not host:
+                errors["host"] = "invalid_host"
+            elif not self._is_valid_host(host):
+                errors["host"] = "invalid_host"
+            else:
                 try:
                     # Check if this host is already configured
                     await self.async_set_unique_id(host)
                     self._abort_if_unique_id_configured()
                     
-                    # Perform connection validation
+                    # Perform simple connection validation
                     await self._validate_connection(host)
                     
-                except CresControlValidationError as err:
-                    _LOGGER.warning("Invalid host format for CresControl: %s - %s", host, err)
-                    errors["base"] = "invalid_host"
-                except CresControlNetworkError as err:
-                    _LOGGER.warning("Network error connecting to CresControl at %s: %s", host, err)
-                    errors["base"] = "cannot_connect"
-                except CresControlDeviceError as err:
-                    _LOGGER.warning("Device error with CresControl at %s: %s", host, err)
-                    errors["base"] = "device_error"
-                except TimeoutError as err:
-                    _LOGGER.warning("Timeout connecting to CresControl at %s: %s", host, err)
-                    errors["base"] = "timeout"
-                except Exception as err:
-                    _LOGGER.error("Unexpected error connecting to CresControl at %s: %s", host, err)
-                    errors["base"] = "unknown"
-                else:
                     _LOGGER.info("Successfully validated CresControl connection to %s", host)
                     return self.async_create_entry(
-                        title=host,
-                        data={
-                            "host": host,
-                            CONF_UPDATE_INTERVAL: update_interval,
-                            CONF_WEBSOCKET_ENABLED: websocket_enabled,
-                            CONF_WEBSOCKET_PORT: websocket_port,
-                            CONF_WEBSOCKET_PATH: websocket_path,
-                        }
+                        title=f"CresControl ({host})",
+                        data={"host": host}
                     )
+                    
+                except Exception as err:
+                    _LOGGER.warning("Failed to connect to CresControl at %s: %s", host, err)
+                    errors["base"] = "cannot_connect"
 
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema({
                 vol.Required("host"): str,
-                vol.Optional(CONF_UPDATE_INTERVAL, default=DEFAULT_UPDATE_INTERVAL_SECONDS): vol.All(
-                    vol.Coerce(int),
-                    vol.Range(min=MIN_UPDATE_INTERVAL, max=MAX_UPDATE_INTERVAL)
-                ),
-                vol.Optional(CONF_WEBSOCKET_ENABLED, default=True): bool,
-                vol.Optional(CONF_WEBSOCKET_PORT, default=81): vol.All(
-                    vol.Coerce(int),
-                    vol.Range(min=1, max=65535)
-                ),
-                vol.Optional(CONF_WEBSOCKET_PATH, default="/websocket"): str,
             }),
             errors=errors,
         )
 
-    async def _validate_connection(self, host: str) -> None:
-        """Validate connection to CresControl device."""
-        session = async_get_clientsession(self.hass)
-        client = CresControlClient(host, session, timeout=CONFIG_FLOW_TIMEOUT)
+    def _is_valid_host(self, host: str) -> bool:
+        """Validate host format (basic IP address or hostname check)."""
+        import re
         
-        # Use a simple read command to ensure the device responds
-        await client.get_value("in-a:voltage")
+        # Check for basic IP address format first
+        ip_pattern = re.compile(r'^(\d{1,3}\.){3}\d{1,3}$')
+        if ip_pattern.match(host):
+            # Validate IP address ranges
+            parts = host.split('.')
+            return all(0 <= int(part) <= 255 for part in parts)
+        
+        # If it looks like an incomplete IP (contains only digits and dots), reject it
+        if re.match(r'^[\d.]+$', host):
+            return False
+        
+        # Check for basic hostname format
+        hostname_pattern = re.compile(r'^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$')
+        return hostname_pattern.match(host) is not None
+
+    async def _validate_connection(self, host: str) -> None:
+        """Validate connection to CresControl device using simple connectivity test."""
+        session = async_get_clientsession(self.hass)
+        client = SimpleCresControlHTTPClient(host, session)
+        
+        # Try WebSocket connectivity first (known to work)
+        try:
+            result = await client.get_value("in-a:voltage")
+            if result is not None:
+                return  # WebSocket connection successful
+        except Exception as e:
+            _LOGGER.debug("WebSocket test failed: %s", e)
+        
+        # Try HTTP connectivity as fallback
+        try:
+            connected = await client.test_connectivity()
+            if connected:
+                return  # HTTP connection successful
+        except Exception as e:
+            _LOGGER.debug("HTTP test failed: %s", e)
+        
+        # If both fail, raise an error
+        raise Exception("Unable to connect via WebSocket or HTTP")
 
     @staticmethod
     def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> CresControlOptionsFlow:
@@ -137,65 +119,14 @@ class CresControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class CresControlOptionsFlow(config_entries.OptionsFlow):
-    """Handle options flow for CresControl."""
+    """Handle options flow for CresControl (simplified)."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
         self.config_entry = config_entry
 
     async def async_step_init(self, user_input: Dict[str, Any] | None = None) -> FlowResult:
-        """Manage the options."""
-        errors: Dict[str, str] = {}
-        
-        if user_input is not None:
-            update_interval: int = user_input[CONF_UPDATE_INTERVAL]
-            websocket_enabled: bool = user_input.get(CONF_WEBSOCKET_ENABLED, True)
-            websocket_port: int = user_input.get(CONF_WEBSOCKET_PORT, 81)
-            websocket_path: str = user_input.get(CONF_WEBSOCKET_PATH, "/websocket").strip()
-            
-            # Validate update interval
-            if not (MIN_UPDATE_INTERVAL <= update_interval <= MAX_UPDATE_INTERVAL):
-                errors[CONF_UPDATE_INTERVAL] = "invalid_update_interval"
-            
-            # Validate WebSocket configuration
-            if websocket_enabled:
-                if not (1 <= websocket_port <= 65535):
-                    errors[CONF_WEBSOCKET_PORT] = "invalid_websocket_port"
-                if not websocket_path.startswith("/"):
-                    errors[CONF_WEBSOCKET_PATH] = "invalid_websocket_path"
-            
-            if not errors:
-                # Update the config entry data
-                new_data = dict(self.config_entry.data)
-                new_data[CONF_UPDATE_INTERVAL] = update_interval
-                new_data[CONF_WEBSOCKET_ENABLED] = websocket_enabled
-                new_data[CONF_WEBSOCKET_PORT] = websocket_port
-                new_data[CONF_WEBSOCKET_PATH] = websocket_path
-                
-                self.hass.config_entries.async_update_entry(
-                    self.config_entry, data=new_data
-                )
-                return self.async_create_entry(title="", data={})
-
-        # Get current values or defaults
-        current_interval = self.config_entry.data.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL_SECONDS)
-        current_websocket_enabled = self.config_entry.data.get(CONF_WEBSOCKET_ENABLED, True)
-        current_websocket_port = self.config_entry.data.get(CONF_WEBSOCKET_PORT, 81)
-        current_websocket_path = self.config_entry.data.get(CONF_WEBSOCKET_PATH, "/websocket")
-
-        return self.async_show_form(
-            step_id="init",
-            data_schema=vol.Schema({
-                vol.Required(CONF_UPDATE_INTERVAL, default=current_interval): vol.All(
-                    vol.Coerce(int),
-                    vol.Range(min=MIN_UPDATE_INTERVAL, max=MAX_UPDATE_INTERVAL)
-                ),
-                vol.Optional(CONF_WEBSOCKET_ENABLED, default=current_websocket_enabled): bool,
-                vol.Optional(CONF_WEBSOCKET_PORT, default=current_websocket_port): vol.All(
-                    vol.Coerce(int),
-                    vol.Range(min=1, max=65535)
-                ),
-                vol.Optional(CONF_WEBSOCKET_PATH, default=current_websocket_path): str,
-            }),
-            errors=errors,
-        )
+        """Manage the options (currently no options available)."""
+        # For now, no options are configurable in the simplified version
+        # This can be extended later if needed
+        return self.async_create_entry(title="", data={})

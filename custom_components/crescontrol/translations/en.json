@@ -3,33 +3,19 @@
     "step": {
       "user": {
         "title": "CresControl setup",
-        "description": "Enter the IP address or hostname of your CresControl device and configure polling and WebSocket options.",
+        "description": "Enter the IP address or hostname of your CresControl device.",
         "data": {
-          "host": "Host (IP address or hostname)",
-          "update_interval": "Update interval (seconds)",
-          "websocket_enabled": "Enable WebSocket (real-time updates)",
-          "websocket_port": "WebSocket port",
-          "websocket_path": "WebSocket path"
+          "host": "Host (IP address or hostname)"
         },
         "data_description": {
-          "host": "The IP address or hostname of your CresControl device",
-          "update_interval": "How often to poll the device for updates (5-300 seconds, default: 10)",
-          "websocket_enabled": "Enable WebSocket for real-time updates (reduces polling frequency)",
-          "websocket_port": "Port number for WebSocket connection (default: 8080)",
-          "websocket_path": "WebSocket endpoint path (default: /ws)"
+          "host": "The IP address or hostname of your CresControl device (e.g., 192.168.1.100)"
         }
       }
     },
     "error": {
-      "cannot_connect": "Failed to connect to the CresControl device after multiple attempts. Please verify the host address, ensure the device is powered on and accessible on your network, and check that no firewall is blocking the connection.",
-      "invalid_host": "Invalid hostname or IP address format. Please enter a valid hostname (e.g., crescontrol.local) or IP address (e.g., 192.168.1.100). Ensure there are no extra spaces or invalid characters.",
-      "device_error": "The CresControl device returned an invalid or unexpected response. This may indicate incompatible firmware, device malfunction, or network interference. Please verify the device is functioning correctly and try again.",
-      "websocket_error": "WebSocket connection failed. This may indicate that the device doesn't support WebSocket, the port is incorrect, or WebSocket is disabled on the device. HTTP polling will still work.",
-      "timeout": "Connection to the CresControl device timed out. This may indicate network issues, device overload, or the device being temporarily unavailable. Please check your network connection and ensure the device is responsive.",
-      "invalid_update_interval": "Update interval must be between 5 and 300 seconds. Choose a value that balances responsiveness with network load.",
-      "invalid_websocket_port": "WebSocket port must be between 1 and 65535.",
-      "invalid_websocket_path": "WebSocket path must start with a forward slash (/).",
-      "unknown": "An unexpected error occurred during device discovery. This could be due to network configuration issues, device compatibility problems, or temporary connectivity issues. Please check the logs for more details and try again."
+      "cannot_connect": "Failed to connect to the CresControl device. Please verify the host address, ensure the device is powered on and accessible on your network.",
+      "invalid_host": "Invalid hostname or IP address format. Please enter a valid hostname or IP address.",
+      "unknown": "An unexpected error occurred during device discovery. Please check the logs for more details and try again."
     },
     "abort": {
       "already_configured": "This CresControl device is already configured."
@@ -39,25 +25,8 @@
     "step": {
       "init": {
         "title": "CresControl options",
-        "description": "Configure polling and WebSocket options for your CresControl device.",
-        "data": {
-          "update_interval": "Update interval (seconds)",
-          "websocket_enabled": "Enable WebSocket (real-time updates)",
-          "websocket_port": "WebSocket port",
-          "websocket_path": "WebSocket path"
-        },
-        "data_description": {
-          "update_interval": "How often to poll the device for updates (5-300 seconds). Lower values provide more responsive updates but increase network traffic.",
-          "websocket_enabled": "Enable WebSocket for real-time updates. When enabled, reduces the need for frequent polling.",
-          "websocket_port": "Port number for WebSocket connection (1-65535)",
-          "websocket_path": "WebSocket endpoint path (must start with /)"
-        }
+        "description": "No configuration options are currently available."
       }
-    },
-    "error": {
-      "invalid_update_interval": "Update interval must be between 5 and 300 seconds.",
-      "invalid_websocket_port": "WebSocket port must be between 1 and 65535.",
-      "invalid_websocket_path": "WebSocket path must start with a forward slash (/)."
     }
   }
 }

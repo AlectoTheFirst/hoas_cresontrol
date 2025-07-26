@@ -3,33 +3,19 @@
     "step": {
       "user": {
         "title": "CresControl-Einrichtung",
-        "description": "Geben Sie die IP-Adresse oder den Hostnamen Ihres CresControl-Geräts ein und konfigurieren Sie Abfrage- und WebSocket-Optionen.",
+        "description": "Geben Sie die IP-Adresse oder den Hostnamen Ihres CresControl-Geräts ein.",
         "data": {
-          "host": "Host (IP-Adresse oder Hostname)",
-          "update_interval": "Aktualisierungsintervall (Sekunden)",
-          "websocket_enabled": "WebSocket aktivieren (Echtzeitaktualisierungen)",
-          "websocket_port": "WebSocket-Port",
-          "websocket_path": "WebSocket-Pfad"
+          "host": "Host (IP-Adresse oder Hostname)"
         },
         "data_description": {
-          "host": "Die IP-Adresse oder der Hostname Ihres CresControl-Geräts",
-          "update_interval": "Wie oft das Gerät nach Aktualisierungen abgefragt werden soll (5-300 Sekunden, Standard: 10)",
-          "websocket_enabled": "WebSocket für Echtzeitaktualisierungen aktivieren (reduziert Abfragehäufigkeit)",
-          "websocket_port": "Port-Nummer für WebSocket-Verbindung (Standard: 8080)",
-          "websocket_path": "WebSocket-Endpunkt-Pfad (Standard: /ws)"
+          "host": "Die IP-Adresse oder der Hostname Ihres CresControl-Geräts (z.B. 192.168.1.100)"
         }
       }
     },
     "error": {
-      "cannot_connect": "Verbindung zum CresControl-Gerät nach mehreren Versuchen fehlgeschlagen. Bitte überprüfen Sie die Host-Adresse, stellen Sie sicher, dass das Gerät eingeschaltet und in Ihrem Netzwerk erreichbar ist, und prüfen Sie, ob eine Firewall die Verbindung blockiert.",
-      "invalid_host": "Ungültiges Hostname- oder IP-Adressformat. Bitte geben Sie einen gültigen Hostnamen (z.B. crescontrol.local) oder eine IP-Adresse (z.B. 192.168.1.100) ein. Stellen Sie sicher, dass keine zusätzlichen Leerzeichen oder ungültigen Zeichen vorhanden sind.",
-      "device_error": "Das CresControl-Gerät hat eine ungültige oder unerwartete Antwort zurückgegeben. Dies kann auf inkompatible Firmware, Gerätedefekt oder Netzwerkstörungen hinweisen. Bitte überprüfen Sie, ob das Gerät ordnungsgemäß funktioniert und versuchen Sie es erneut.",
-      "websocket_error": "WebSocket-Verbindung fehlgeschlagen. Dies kann darauf hinweisen, dass das Gerät WebSocket nicht unterstützt, der Port falsch ist oder WebSocket am Gerät deaktiviert ist. HTTP-Abfrage funktioniert weiterhin.",
-      "timeout": "Verbindung zum CresControl-Gerät ist zeitlich abgelaufen. Dies kann auf Netzwerkprobleme, Geräteüberlastung oder temporäre Nichtverfügbarkeit hinweisen. Bitte überprüfen Sie Ihre Netzwerkverbindung und stellen Sie sicher, dass das Gerät reagiert.",
-      "invalid_update_interval": "Das Aktualisierungsintervall muss zwischen 5 und 300 Sekunden liegen. Wählen Sie einen Wert, der Reaktionsfähigkeit mit Netzwerklast ausbalanciert.",
-      "invalid_websocket_port": "WebSocket-Port muss zwischen 1 und 65535 liegen.",
-      "invalid_websocket_path": "WebSocket-Pfad muss mit einem Schrägstrich (/) beginnen.",
-      "unknown": "Ein unerwarteter Fehler ist während der Geräteerkennung aufgetreten. Dies könnte auf Netzwerkkonfigurationsprobleme, Gerätekompatibilitätsprobleme oder temporäre Verbindungsprobleme zurückzuführen sein. Bitte überprüfen Sie die Protokolle für weitere Details und versuchen Sie es erneut."
+      "cannot_connect": "Verbindung zum CresControl-Gerät fehlgeschlagen. Bitte überprüfen Sie die Host-Adresse und stellen Sie sicher, dass das Gerät eingeschaltet und in Ihrem Netzwerk erreichbar ist.",
+      "invalid_host": "Ungültiges Hostname- oder IP-Adressformat. Bitte geben Sie einen gültigen Hostnamen oder eine IP-Adresse ein.",
+      "unknown": "Ein unerwarteter Fehler ist während der Geräteerkennung aufgetreten. Bitte überprüfen Sie die Protokolle für weitere Details und versuchen Sie es erneut."
     },
     "abort": {
       "already_configured": "Dieses CresControl-Gerät ist bereits konfiguriert."
@@ -39,25 +25,8 @@
     "step": {
       "init": {
         "title": "CresControl-Optionen",
-        "description": "Konfigurieren Sie Abfrage- und WebSocket-Optionen für Ihr CresControl-Gerät.",
-        "data": {
-          "update_interval": "Aktualisierungsintervall (Sekunden)",
-          "websocket_enabled": "WebSocket aktivieren (Echtzeitaktualisierungen)",
-          "websocket_port": "WebSocket-Port",
-          "websocket_path": "WebSocket-Pfad"
-        },
-        "data_description": {
-          "update_interval": "Wie oft das Gerät nach Aktualisierungen abgefragt werden soll (5-300 Sekunden). Niedrigere Werte bieten reaktionsschnellere Aktualisierungen, erhöhen aber den Netzwerkverkehr.",
-          "websocket_enabled": "WebSocket für Echtzeitaktualisierungen aktivieren. Wenn aktiviert, reduziert sich die Notwendigkeit häufiger Abfragen.",
-          "websocket_port": "Port-Nummer für WebSocket-Verbindung (1-65535)",
-          "websocket_path": "WebSocket-Endpunkt-Pfad (muss mit / beginnen)"
-        }
+        "description": "Derzeit sind keine Konfigurationsoptionen verfügbar."
       }
-    },
-    "error": {
-      "invalid_update_interval": "Das Aktualisierungsintervall muss zwischen 5 und 300 Sekunden liegen.",
-      "invalid_websocket_port": "WebSocket-Port muss zwischen 1 und 65535 liegen.",
-      "invalid_websocket_path": "WebSocket-Pfad muss mit einem Schrägstrich (/) beginnen."
     }
   }
 }

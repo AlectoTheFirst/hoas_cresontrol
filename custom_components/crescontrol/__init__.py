@@ -20,16 +20,11 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers import device_registry as dr
 
-from .api import CresControlClient, CresControlError
 from .websocket_client import CresControlWebSocketClient
 from .hybrid_coordinator import CresControlHybridCoordinator
 from .const import (
     DOMAIN,
     DEFAULT_UPDATE_INTERVAL_SECONDS,
-    CONF_UPDATE_INTERVAL,
-    CONF_WEBSOCKET_ENABLED,
-    CONF_WEBSOCKET_PORT,
-    CONF_WEBSOCKET_PATH,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -46,52 +41,31 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up CresControl from a config entry created via the UI."""
     host = entry.data["host"]
     
-    # Get configuration with defaults
-    update_interval_seconds = entry.data.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL_SECONDS)
-    update_interval = timedelta(seconds=update_interval_seconds)
-    websocket_enabled = entry.data.get(CONF_WEBSOCKET_ENABLED, True)
-    websocket_port = entry.data.get(CONF_WEBSOCKET_PORT, 81)
-    websocket_path = entry.data.get(CONF_WEBSOCKET_PATH, "/websocket")
+    # Use default update interval (simplified configuration)
+    update_interval = timedelta(seconds=DEFAULT_UPDATE_INTERVAL_SECONDS)
     
     session = async_get_clientsession(hass)
     
-    # Create HTTP client for fallback communication
-    http_client = CresControlClient(host, session)
+    # Create WebSocket client for real-time data
+    websocket_client = CresControlWebSocketClient(
+        host=host,
+        session=session,
+        port=81,  # Fixed port based on testing
+        path="/websocket"  # Fixed path based on testing
+    )
     
-    # Create coordinator
-    if websocket_enabled:
-        # Create WebSocket client for real-time data
-        websocket_client = CresControlWebSocketClient(
-            host=host,
-            session=session,
-            port=websocket_port,
-            path=websocket_path
-        )
-        
-        # Create hybrid coordinator that prioritizes WebSocket with HTTP fallback
-        coordinator = CresControlHybridCoordinator(
-            hass=hass,
-            http_client=http_client,
-            websocket_client=websocket_client,
-            host=host,
-            update_interval=update_interval,
-        )
-    else:
-        # Create simple HTTP-only coordinator
-        async def update_method():
-            commands = [
-                'in-a:voltage', 'fan:enabled', 'fan:duty-cycle',
-                'out-a:enabled', 'out-a:voltage', 'out-b:enabled', 'out-b:voltage'
-            ]
-            return await http_client.send_commands(commands)
-        
-        coordinator = DataUpdateCoordinator(
-            hass,
-            _LOGGER,
-            name=f"CresControl {host}",
-            update_method=update_method,
-            update_interval=update_interval,
-        )
+    # Create HTTP client for fallback communication
+    from .simple_http_client import SimpleCresControlHTTPClient
+    http_client = SimpleCresControlHTTPClient(host, session)
+    
+    # Create hybrid coordinator that prioritizes WebSocket with HTTP fallback
+    coordinator = CresControlHybridCoordinator(
+        hass=hass,
+        http_client=http_client,
+        websocket_client=websocket_client,
+        host=host,
+        update_interval=update_interval,
+    )
 
     try:
         # Perform initial refresh
@@ -123,7 +97,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Store data for platforms
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
         "http_client": http_client,
-        "websocket_client": websocket_client if websocket_enabled else None,
+        "websocket_client": websocket_client,
         "coordinator": coordinator,
         "device_info": device_info,
     }

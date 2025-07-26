@@ -73,20 +73,22 @@ class CresControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Validate host format (basic IP address or hostname check)."""
         import re
         
-        # Check for basic IP address format first
+        # Simplified validation - just check for basic format
+        import re
+        
+        # Check for basic IP address format
         ip_pattern = re.compile(r'^(\d{1,3}\.){3}\d{1,3}$')
         if ip_pattern.match(host):
-            # Validate IP address ranges
+            # Basic IP validation
             parts = host.split('.')
-            return all(0 <= int(part) <= 255 for part in parts)
+            try:
+                return all(0 <= int(part) <= 255 for part in parts)
+            except ValueError:
+                return False
         
-        # If it looks like an incomplete IP (contains only digits and dots), reject it
-        if re.match(r'^[\d.]+$', host):
-            return False
-        
-        # Check for basic hostname format
-        hostname_pattern = re.compile(r'^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$')
-        return hostname_pattern.match(host) is not None
+        # Check for basic hostname format (letters, numbers, dots, hyphens)
+        hostname_pattern = re.compile(r'^[a-zA-Z0-9.-]+$')
+        return hostname_pattern.match(host) is not None and len(host) <= 253
 
     async def _validate_connection(self, host: str) -> None:
         """Validate connection to CresControl device using simple connectivity test."""

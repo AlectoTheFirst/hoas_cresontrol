@@ -21,27 +21,12 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 
-# Core switch definitions - reduced to essential controls only
+# Core switch definitions - only parameters confirmed to exist on device
 CORE_SWITCHES = [
     {
         "key": "fan:enabled",
         "name": "Fan",
         "icon": "mdi:fan",
-    },
-    {
-        "key": "switch-12v:enabled",
-        "name": "12V Switch",
-        "icon": "mdi:electric-switch",
-    },
-    {
-        "key": "switch-24v-a:enabled",
-        "name": "24V Switch A",
-        "icon": "mdi:electric-switch",
-    },
-    {
-        "key": "switch-24v-b:enabled",
-        "name": "24V Switch B",
-        "icon": "mdi:electric-switch",
     },
     {
         "key": "out-a:enabled",
@@ -63,16 +48,6 @@ CORE_SWITCHES = [
         "name": "Output D Enabled",
         "icon": "mdi:tune",
     },
-    {
-        "key": "out-e:enabled",
-        "name": "Output E Enabled",
-        "icon": "mdi:tune",
-    },
-    {
-        "key": "out-f:enabled",
-        "name": "Output F Enabled",
-        "icon": "mdi:tune",
-    },
 ]
 
 
@@ -84,10 +59,10 @@ async def async_setup_entry(
     """Set up CresControl switches based on a config entry."""
     data = hass.data[DOMAIN][entry.entry_id]
     coordinator = data["coordinator"]
-    client = data["client"]
+    http_client = data["http_client"]
     device_info = data["device_info"]
     entities = [
-        CresControlSwitch(coordinator, client, device_info, definition)
+        CresControlSwitch(coordinator, http_client, device_info, definition)
         for definition in CORE_SWITCHES
     ]
     async_add_entities(entities)
@@ -140,7 +115,8 @@ class CresControlSwitch(CoordinatorEntity, SwitchEntity):
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""
         try:
-            await self._client.set_value(self._key, True)
+            # Use "1" for on state as confirmed by WebSocket testing
+            await self._client.set_value(self._key, "1")
             await self.coordinator.async_request_refresh()
         except Exception as err:
             _LOGGER.error("Failed to turn on switch %s: %s", self._attr_name, err)
@@ -149,7 +125,8 @@ class CresControlSwitch(CoordinatorEntity, SwitchEntity):
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
         try:
-            await self._client.set_value(self._key, False)
+            # Use "0" for off state as confirmed by WebSocket testing
+            await self._client.set_value(self._key, "0")
             await self.coordinator.async_request_refresh()
         except Exception as err:
             _LOGGER.error("Failed to turn off switch %s: %s", self._attr_name, err)

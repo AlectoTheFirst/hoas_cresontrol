@@ -16,14 +16,7 @@ from typing import Any, Dict, Optional, Callable, Set
 import aiohttp
 from aiohttp import ClientSession, WSMsgType
 
-try:
-    from homeassistant.util import dt as dt_util
-except ImportError:
-    # Fallback for testing without Home Assistant
-    class dt_util:
-        @staticmethod
-        def utcnow():
-            return datetime.utcnow()
+from homeassistant.util import dt as dt_util
 
 _LOGGER = logging.getLogger(__name__)
 

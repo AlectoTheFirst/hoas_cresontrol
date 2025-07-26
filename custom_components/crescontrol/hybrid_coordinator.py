@@ -13,41 +13,12 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
-try:
-    from homeassistant.core import HomeAssistant
-    from homeassistant.helpers.update_coordinator import (
-        DataUpdateCoordinator,
-        UpdateFailed,
-    )
-    from homeassistant.util import dt as dt_util
-except ImportError:
-    # Fallback for testing without Home Assistant
-    from datetime import datetime
-    
-    class dt_util:
-        @staticmethod
-        def utcnow():
-            return datetime.utcnow()
-    
-    class UpdateFailed(Exception):
-        pass
-    
-    class DataUpdateCoordinator:
-        def __init__(self, hass, logger, name, update_method, update_interval):
-            self.hass = hass
-            self.logger = logger
-            self.name = name
-            self._update_method = update_method
-            self.update_interval = update_interval
-            self.data = {}
-        
-        def async_set_updated_data(self, data):
-            self.data = data
-        
-        async def async_request_refresh(self):
-            if self._update_method:
-                data = await self._update_method()
-                self.async_set_updated_data(data)
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.update_coordinator import (
+    DataUpdateCoordinator,
+    UpdateFailed,
+)
+from homeassistant.util import dt as dt_util
 
 from .api import CresControlClient, CresControlError
 from .websocket_client import CresControlWebSocketClient, CresControlWebSocketError

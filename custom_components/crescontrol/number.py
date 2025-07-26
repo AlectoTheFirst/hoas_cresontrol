@@ -82,10 +82,10 @@ async def async_setup_entry(
     """Set up CresControl number entities based on a config entry."""
     data = hass.data[DOMAIN][entry.entry_id]
     coordinator = data["coordinator"]
-    client = data["client"]
+    http_client = data["http_client"]
     device_info = data["device_info"]
     entities = [
-        CresControlNumber(coordinator, client, device_info, definition)
+        CresControlNumber(coordinator, http_client, device_info, definition)
         for definition in CORE_NUMBERS
     ]
     async_add_entities(entities)

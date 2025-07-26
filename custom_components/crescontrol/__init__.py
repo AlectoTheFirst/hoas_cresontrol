@@ -17,11 +17,11 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers import device_registry as dr
 
 from .websocket_client import CresControlWebSocketClient
 from .hybrid_coordinator import CresControlHybridCoordinator
+from .simple_http_client import SimpleCresControlHTTPClient
 from .const import (
     DOMAIN,
     DEFAULT_UPDATE_INTERVAL_SECONDS,
@@ -55,7 +55,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     
     # Create HTTP client for fallback communication
-    from .simple_http_client import SimpleCresControlHTTPClient
     http_client = SimpleCresControlHTTPClient(host, session)
     
     # Create hybrid coordinator that prioritizes WebSocket with HTTP fallback

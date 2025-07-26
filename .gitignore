@@ -1,9 +1,8 @@
 *.pdf
 .pytest_cache
 .DS_Store
-.kiro/*
-.kiro
-.kiro/specs/*
-kiro/
 .vscode
 crescontrol-gui/
+
+# Kiro AI assistant folder - ignore completely
+.kiro/

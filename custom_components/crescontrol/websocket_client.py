@@ -180,9 +180,16 @@ class CresControlWebSocketClient:
             # Send commands for core parameters based on successful testing
             # These parameters are confirmed to work with the real device
             initial_commands = [
+                # Voltage inputs
                 'in-a:voltage',      # ✅ Confirmed working
+                'in-b:voltage',      # Test if available
+                
+                # Fan monitoring
                 'fan:enabled',       # ✅ Confirmed working  
                 'fan:duty-cycle',    # ✅ Confirmed working
+                'fan:rpm',           # Fan RPM monitoring
+                
+                # Output controls
                 'out-a:enabled',     # ✅ Confirmed working
                 'out-a:voltage',     # ✅ Confirmed working
                 'out-b:enabled',     # ✅ Confirmed working
@@ -195,8 +202,16 @@ class CresControlWebSocketClient:
                 'out-e:voltage',     # Likely working (same pattern)
                 'out-f:enabled',     # Likely working (same pattern)
                 'out-f:voltage',     # Likely working (same pattern)
-                # Note: in-b:voltage, switch-12v:enabled, switch-24v-a:enabled 
-                # return error responses on test device, so excluding for now
+                
+                # Extension-based sensors (CO2 and climate sensors)
+                'extension:co2-2006:co2-concentration',    # CO2 concentration
+                'extension:co2-2006:temperature',          # CO2 sensor temperature
+                'extension:climate-2011:temperature',      # Air temperature
+                'extension:climate-2011:humidity',         # Humidity
+                'extension:climate-2011:vpd',              # Vapor Pressure Deficit
+                
+                # Note: switch parameters may return error responses on some devices
+                # 'switch-12v:enabled', 'switch-24v-a:enabled', 'switch-24v-b:enabled'
             ]
             
             for cmd in initial_commands:

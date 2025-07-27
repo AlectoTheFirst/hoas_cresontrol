@@ -6,3 +6,5 @@ crescontrol-gui/
 
 # Kiro AI assistant folder - ignore completely
 .kiro/
+demo-ui/
+api-docs/

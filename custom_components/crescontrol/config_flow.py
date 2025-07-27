@@ -74,7 +74,6 @@ class CresControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         import re
         
         # Simplified validation - just check for basic format
-        import re
         
         # Check for basic IP address format
         ip_pattern = re.compile(r'^(\d{1,3}\.){3}\d{1,3}$')

@@ -32,21 +32,21 @@ async def async_setup_entry(
     """Set up CresControl fan based on a config entry."""
     data = hass.data[DOMAIN][entry.entry_id]
     coordinator = data["coordinator"]
-    client = data["client"]
+    http_client = data["http_client"]
     device_info = data["device_info"]
     
     # Create simplified fan entity
-    fan_entity = CresControlFan(coordinator, client, device_info)
+    fan_entity = CresControlFan(coordinator, http_client, device_info)
     async_add_entities([fan_entity])
 
 
 class CresControlFan(CoordinatorEntity, FanEntity):
     """Simplified CresControl fan entity."""
 
-    def __init__(self, coordinator, client, device_info: Dict[str, Any]) -> None:
+    def __init__(self, coordinator, http_client, device_info: Dict[str, Any]) -> None:
         """Initialize the fan entity."""
         super().__init__(coordinator)
-        self._client = client
+        self._client = http_client
         self._device_info = device_info
         self._attr_name = "CresControl Fan"
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}_fan"

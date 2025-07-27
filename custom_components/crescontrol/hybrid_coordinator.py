@@ -20,8 +20,13 @@ from homeassistant.helpers.update_coordinator import (
 )
 from homeassistant.util import dt as dt_util
 
-from .api import CresControlClient, CresControlError
+from .simple_http_client import SimpleCresControlHTTPClient
 from .websocket_client import CresControlWebSocketClient, CresControlWebSocketError
+
+# Define custom error classes for consistency
+class CresControlError(Exception):
+    """General CresControl communication error."""
+    pass
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,7 +37,7 @@ class CresControlHybridCoordinator(DataUpdateCoordinator):
     def __init__(
         self,
         hass: HomeAssistant,
-        http_client: CresControlClient,
+        http_client: SimpleCresControlHTTPClient,
         websocket_client: CresControlWebSocketClient,
         host: str,
         update_interval: timedelta,
@@ -216,7 +221,8 @@ class CresControlHybridCoordinator(DataUpdateCoordinator):
                 # Add more parameters as needed
             ]
             
-            http_data = await self.http_client.send_commands(commands)
+            # Use get_multiple_values method from SimpleCresControlHTTPClient
+            http_data = await self.http_client.get_multiple_values(commands)
             
             # Update HTTP state
             self._http_last_data_time = dt_util.utcnow()
@@ -227,7 +233,7 @@ class CresControlHybridCoordinator(DataUpdateCoordinator):
             # Return combined data (WebSocket + HTTP)
             return self._get_combined_data()
             
-        except CresControlError as err:
+        except Exception as err:
             # HTTP failed - check if we have any recent data to fall back to
             if self._has_recent_data():
                 _LOGGER.warning(
@@ -283,7 +289,7 @@ class CresControlHybridCoordinator(DataUpdateCoordinator):
             # Trigger immediate refresh to get updated state
             await self.async_request_refresh()
             
-        except CresControlError as err:
+        except Exception as err:
             error_msg = f"Failed to set {parameter} = {value}: {err}"
             _LOGGER.error(error_msg)
             raise UpdateFailed(error_msg) from err
@@ -312,7 +318,7 @@ class CresControlHybridCoordinator(DataUpdateCoordinator):
         # Not found in cached data - try direct HTTP request
         try:
             return await self.http_client.get_value(parameter)
-        except CresControlError as err:
+        except Exception as err:
             _LOGGER.warning("Failed to get %s: %s", parameter, err)
             return None
     

@@ -16,7 +16,10 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import (
     UnitOfElectricPotential,
+    UnitOfTemperature,
     REVOLUTIONS_PER_MINUTE,
+    PERCENTAGE,
+    CONCENTRATION_PARTS_PER_MILLION,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -28,8 +31,9 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 
-# Core sensor definitions - reduced to essential parameters only
+# Core sensor definitions - including CO2 and climate sensors
 CORE_SENSORS = [
+    # Voltage inputs
     {
         "key": "in-a:voltage",
         "name": "Input A Voltage",
@@ -46,6 +50,8 @@ CORE_SENSORS = [
         "state_class": SensorStateClass.MEASUREMENT,
         "icon": "mdi:lightning-bolt",
     },
+    
+    # Fan monitoring
     {
         "key": "fan:rpm",
         "name": "Fan RPM",
@@ -53,6 +59,60 @@ CORE_SENSORS = [
         "device_class": None,
         "state_class": SensorStateClass.MEASUREMENT,
         "icon": "mdi:fan",
+    },
+    
+    # CO2 sensor extension
+    {
+        "key": "extension:co2-2006:co2-concentration",
+        "name": "CO2 Concentration",
+        "unit": CONCENTRATION_PARTS_PER_MILLION,
+        "device_class": SensorDeviceClass.CO2,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "icon": "mdi:molecule-co2",
+    },
+    {
+        "key": "extension:co2-2006:temperature",
+        "name": "CO2 Sensor Temperature",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "icon": "mdi:thermometer",
+    },
+    
+    # Climate sensor extension
+    {
+        "key": "extension:climate-2011:temperature",
+        "name": "Air Temperature",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "icon": "mdi:thermometer",
+    },
+    {
+        "key": "extension:climate-2011:humidity",
+        "name": "Humidity",
+        "unit": PERCENTAGE,
+        "device_class": SensorDeviceClass.HUMIDITY,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "icon": "mdi:water-percent",
+    },
+    {
+        "key": "extension:climate-2011:vpd",
+        "name": "Vapor Pressure Deficit (VPD)",
+        "unit": "kPa",
+        "device_class": None,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "icon": "mdi:water-percent",
+    },
+    
+    # RS485 sensor data - CO2
+    {
+        "key": "rs485:response:103",
+        "name": "CO2 Level",
+        "unit": CONCENTRATION_PARTS_PER_MILLION,
+        "device_class": SensorDeviceClass.CO2,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "icon": "mdi:molecule-co2",
     },
 ]
 
@@ -121,7 +181,18 @@ class CresControlSensor(CoordinatorEntity, SensorEntity):
         """Return the native value of the sensor with enhanced error handling and validation."""
         if not self.coordinator.data:
             return None
+        
+        # Handle RS485 response sensors differently
+        if self._key.startswith("rs485:response:"):
+            # Get the RS485 response data
+            rs485_response = self.coordinator.data.get("rs485:response")
+            if rs485_response is None:
+                return None
             
+            # Parse and validate the RS485 response
+            return self._validate_sensor_value(rs485_response)
+        
+        # Handle regular sensors
         raw_value = self.coordinator.data.get(self._key)
         if raw_value is None:
             return None
@@ -188,6 +259,64 @@ class CresControlSensor(CoordinatorEntity, SensorEntity):
         except (ValueError, TypeError):
             return None
     
+    def _parse_rs485_response(self, response_str: str) -> dict:
+        """Parse RS485 response string to extract sensor parameters.
+        
+        Format: "[address:param=value;param=value;...:checksum]"
+        Example: "[5:100=25.93;101=57.72;102=.;103=0:133]"
+        
+        Args:
+            response_str: Raw RS485 response string
+            
+        Returns:
+            Dict mapping parameter IDs to values, or empty dict if parsing fails
+        """
+        import re
+        
+        if not isinstance(response_str, str):
+            return {}
+        
+        # Remove quotes if present
+        if response_str.startswith('"') and response_str.endswith('"'):
+            response_str = response_str[1:-1]
+        
+        # Pattern: [address:param=value;param=value;...:checksum]
+        pattern = r'\[(\d+):(.*?):(\d+)\]'
+        match = re.match(pattern, response_str)
+        
+        if not match:
+            return {}
+        
+        params_str = match.group(2)
+        params = {}
+        
+        # Parse parameters: param=value;param=value
+        for param_pair in params_str.split(';'):
+            if '=' in param_pair:
+                param_id_str, value_str = param_pair.split('=', 1)
+                
+                try:
+                    param_id = int(param_id_str)
+                    
+                    # Handle different value types
+                    if value_str == '.':
+                        value = None
+                    else:
+                        try:
+                            # Try to convert to float
+                            value = float(value_str)
+                        except ValueError:
+                            # Keep as string if not numeric
+                            value = value_str
+                    
+                    params[param_id] = value
+                    
+                except ValueError:
+                    # Skip invalid parameter IDs
+                    continue
+        
+        return params
+
     def _validate_sensor_value(self, value: Any) -> Any:
         """Validate sensor value based on sensor type and apply reasonable bounds.
         
@@ -220,6 +349,32 @@ class CresControlSensor(CoordinatorEntity, SensorEntity):
                     else:
                         _LOGGER.warning("RPM value %s out of range for %s", value, self._key)
                         return None
+            
+            # RS485 sensor data validation
+            elif self._key.startswith("rs485:response:"):
+                # Extract parameter ID from key (e.g., "rs485:response:100" -> 100)
+                param_id = self._key.split(":")[-1]
+                
+                # Parse RS485 response data
+                parsed_data = self._parse_rs485_response(value)
+                if parsed_data and param_id.isdigit():
+                    param_value = parsed_data.get(int(param_id))
+                    
+                    if param_value is None:
+                        return None
+                    
+                    # Validate based on parameter type
+                    if param_id == "100":  # Temperature
+                        if isinstance(param_value, (int, float)) and -40.0 <= param_value <= 80.0:
+                            return round(float(param_value), 1)
+                    elif param_id == "101":  # Humidity
+                        if isinstance(param_value, (int, float)) and 0.0 <= param_value <= 100.0:
+                            return round(float(param_value), 1)
+                    elif param_id == "103":  # CO2
+                        if isinstance(param_value, (int, float)) and 0 <= param_value <= 10000:
+                            return int(param_value)
+                
+                return None
             
             # Default: return the value as-is if no specific validation
             return value

@@ -10,6 +10,7 @@ import logging
 from typing import Any, Dict, List
 
 from homeassistant.components.number import NumberEntity
+from homeassistant.const import UnitOfElectricPotential
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.config_entries import ConfigEntry
@@ -107,7 +108,6 @@ class CresControlNumber(CoordinatorEntity, NumberEntity):
         self._attr_icon = definition.get("icon")
         
         # Default to volts for voltage parameters
-        from homeassistant.const import UnitOfElectricPotential
         self._attr_native_unit_of_measurement = UnitOfElectricPotential.VOLT
 
     @property

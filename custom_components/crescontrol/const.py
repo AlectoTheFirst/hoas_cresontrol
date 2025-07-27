@@ -271,3 +271,56 @@ PWM_ERROR_PWM_NOT_ENABLED: str = "PWM mode must be enabled before setting duty c
 PWM_MAX_BATCH_OPERATIONS: int = 10  # Maximum PWM operations in a single batch
 PWM_VALIDATION_TIMEOUT: float = 5.0  # Timeout for PWM parameter validation
 PWM_SETTLE_TIME: float = 0.1  # Time to wait for PWM settings to settle (100ms)
+
+# =============================================================================
+# CO2 and Climate Sensor Constants
+# =============================================================================
+
+# CO2 sensor parameter names (RS485-based)
+CO2_PARAM_RS485: str = "rs485:response:103"
+
+# CO2 validation limits
+CO2_PPM_MIN: int = 0  # Minimum CO2 concentration
+CO2_PPM_MAX: int = 10000  # Maximum reasonable CO2 concentration (10,000 ppm)
+CO2_PPM_NORMAL_MIN: int = 400  # Normal outdoor CO2 level
+CO2_PPM_NORMAL_MAX: int = 1000  # Normal indoor CO2 level
+CO2_PPM_HIGH_THRESHOLD: int = 1500  # High CO2 threshold
+CO2_PPM_CRITICAL_THRESHOLD: int = 5000  # Critical CO2 threshold
+
+# Climate sensor parameter names (RS485-based)
+CLIMATE_PARAM_TEMPERATURE: str = "rs485:response:100"
+CLIMATE_PARAM_HUMIDITY: str = "rs485:response:101"
+
+# Temperature validation limits (Celsius)
+TEMP_MIN: float = -40.0  # Minimum reasonable temperature
+TEMP_MAX: float = 80.0   # Maximum reasonable temperature
+TEMP_GROW_MIN: float = 15.0  # Minimum grow room temperature
+TEMP_GROW_MAX: float = 35.0  # Maximum grow room temperature
+TEMP_OPTIMAL_MIN: float = 20.0  # Optimal grow temperature minimum
+TEMP_OPTIMAL_MAX: float = 28.0  # Optimal grow temperature maximum
+
+# Humidity validation limits (percentage)
+HUMIDITY_MIN: float = 0.0    # Minimum humidity
+HUMIDITY_MAX: float = 100.0  # Maximum humidity
+HUMIDITY_GROW_MIN: float = 40.0  # Minimum grow room humidity
+HUMIDITY_GROW_MAX: float = 70.0  # Maximum grow room humidity
+HUMIDITY_OPTIMAL_MIN: float = 50.0  # Optimal grow humidity minimum
+HUMIDITY_OPTIMAL_MAX: float = 60.0  # Optimal grow humidity maximum
+
+# Atmospheric pressure validation limits (hPa)
+PRESSURE_MIN: float = 800.0   # Minimum reasonable pressure
+PRESSURE_MAX: float = 1200.0  # Maximum reasonable pressure
+PRESSURE_NORMAL: float = 1013.25  # Standard atmospheric pressure at sea level
+
+# Climate sensor device information
+CLIMATE_DEVICE_CLASS_TEMP: str = "temperature"
+CLIMATE_DEVICE_CLASS_HUMIDITY: str = "humidity"
+CLIMATE_DEVICE_CLASS_PRESSURE: str = "atmospheric_pressure"
+CLIMATE_DEVICE_CLASS_CO2: str = "carbon_dioxide"
+
+# Climate sensor icons
+CLIMATE_ICON_TEMPERATURE: str = "mdi:thermometer"
+CLIMATE_ICON_HUMIDITY: str = "mdi:water-percent"
+CLIMATE_ICON_PRESSURE: str = "mdi:gauge"
+CLIMATE_ICON_CO2: str = "mdi:molecule-co2"
+CLIMATE_ICON_DEWPOINT: str = "mdi:water-thermometer"

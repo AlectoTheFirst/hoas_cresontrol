@@ -1,0 +1,21 @@
+# Testing dependencies for CresControl Home Assistant integration
+
+# Core testing framework
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+
+# Home Assistant testing utilities
+pytest-homeassistant-custom-component>=0.13.0
+
+# HTTP testing for async API client
+pytest-aiohttp>=1.0.4
+
+# Coverage reporting
+pytest-cov>=4.0.0
+
+# Test mocking utilities
+pytest-mock>=3.10.0
+
+# Additional useful testing tools
+responses>=0.23.0  # For HTTP request mocking
+freezegun>=1.2.0   # For time mocking in tests

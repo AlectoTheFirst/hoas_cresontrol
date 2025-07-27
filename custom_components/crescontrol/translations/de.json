@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "CresControl-Einrichtung",
+        "description": "Geben Sie die IP-Adresse oder den Hostnamen Ihres CresControl-Geräts ein.",
+        "data": {
+          "host": "Host (IP-Adresse oder Hostname)"
+        },
+        "data_description": {
+          "host": "Die IP-Adresse oder der Hostname Ihres CresControl-Geräts (z.B. 192.168.1.100)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zum CresControl-Gerät fehlgeschlagen. Bitte überprüfen Sie die Host-Adresse und stellen Sie sicher, dass das Gerät eingeschaltet und in Ihrem Netzwerk erreichbar ist.",
+      "invalid_host": "Ungültiges Hostname- oder IP-Adressformat. Bitte geben Sie einen gültigen Hostnamen oder eine IP-Adresse ein.",
+      "unknown": "Ein unerwarteter Fehler ist während der Geräteerkennung aufgetreten. Bitte überprüfen Sie die Protokolle für weitere Details und versuchen Sie es erneut."
+    },
+    "abort": {
+      "already_configured": "Dieses CresControl-Gerät ist bereits konfiguriert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "CresControl-Optionen",
+        "description": "Derzeit sind keine Konfigurationsoptionen verfügbar."
+      }
+    }
+  }
+}

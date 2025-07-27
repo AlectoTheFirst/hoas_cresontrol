@@ -1,0 +1,10 @@
+*.pdf
+.pytest_cache
+.DS_Store
+.vscode/
+crescontrol-gui/
+
+# Kiro AI assistant folder - ignore completely
+.kiro/
+demo-ui/
+api-docs/

@@ -1,0 +1,1 @@
+"""Tests for the CresControl Home Assistant integration."""

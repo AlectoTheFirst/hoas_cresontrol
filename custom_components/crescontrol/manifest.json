@@ -1,0 +1,13 @@
+{
+  "domain": "crescontrol",
+  "name": "CresControl",
+  "version": "1.0.0",
+  "documentation": "https://wiki.cre.science/de/crescontrol/crescontrol-api",
+  "issue_tracker": "https://github.com/cre-science/crescontrol-homeassistant/issues",
+  "config_flow": true,
+  "codeowners": ["@cre-science"],
+  "dependencies": [],
+  "requirements": [],
+  "iot_class": "local_polling",
+  "integration_type": "device"
+}

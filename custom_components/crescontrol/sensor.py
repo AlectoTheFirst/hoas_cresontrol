@@ -61,7 +61,27 @@ CORE_SENSORS = [
         "icon": "mdi:fan",
     },
     
-    # CO2 sensor extension
+    # Climate sensor - Temperature
+    {
+        "key": "extension:climate-2011:temperature",
+        "name": "Climate Temperature",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "icon": "mdi:thermometer",
+    },
+    
+    # Climate sensor - Humidity
+    {
+        "key": "extension:climate-2011:humidity",
+        "name": "Climate Humidity",
+        "unit": PERCENTAGE,
+        "device_class": SensorDeviceClass.HUMIDITY,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "icon": "mdi:water-percent",
+    },
+    
+    # CO2 sensor - CO2 Concentration
     {
         "key": "extension:co2-2006:co2-concentration",
         "name": "CO2 Concentration",
@@ -70,9 +90,11 @@ CORE_SENSORS = [
         "state_class": SensorStateClass.MEASUREMENT,
         "icon": "mdi:molecule-co2",
     },
+    
+    # CO2 sensor - Temperature
     {
         "key": "extension:co2-2006:temperature",
-        "name": "CO2 Sensor Temperature",
+        "name": "CO2 Temperature",
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
@@ -374,6 +396,70 @@ class CresControlSensor(CoordinatorEntity, SensorEntity):
                         if isinstance(param_value, (int, float)) and 0 <= param_value <= 10000:
                             return int(param_value)
                 
+                return None
+            
+            # Extension-based CO2 concentration validation
+            elif self._key == "extension:co2-2006:co2-concentration":
+                if isinstance(value, (int, float)):
+                    # CO2 range: 0 to 10000 ppm
+                    if 0 <= value <= 10000:
+                        return int(value)
+                elif isinstance(value, str):
+                    try:
+                        co2_value = float(value)
+                        if 0 <= co2_value <= 10000:
+                            return int(co2_value)
+                    except ValueError:
+                        pass
+                _LOGGER.debug("Could not parse CO2 concentration value: %s", value)
+                return None
+            
+            # Extension-based temperature sensors validation
+            elif self._key in ["extension:co2-2006:temperature", "extension:climate-2011:temperature"]:
+                if isinstance(value, (int, float)):
+                    # Temperature range: -40°C to +80°C
+                    if -40.0 <= value <= 80.0:
+                        return round(float(value), 1)
+                elif isinstance(value, str):
+                    try:
+                        temp_value = float(value)
+                        if -40.0 <= temp_value <= 80.0:
+                            return round(temp_value, 1)
+                    except ValueError:
+                        pass
+                _LOGGER.debug("Could not parse temperature value: %s", value)
+                return None
+            
+            # Extension-based humidity validation
+            elif self._key == "extension:climate-2011:humidity":
+                if isinstance(value, (int, float)):
+                    # Humidity range: 0% to 100%
+                    if 0.0 <= value <= 100.0:
+                        return round(float(value), 1)
+                elif isinstance(value, str):
+                    try:
+                        hum_value = float(value)
+                        if 0.0 <= hum_value <= 100.0:
+                            return round(hum_value, 1)
+                    except ValueError:
+                        pass
+                _LOGGER.debug("Could not parse humidity value: %s", value)
+                return None
+            
+            # Extension-based VPD validation
+            elif self._key == "extension:climate-2011:vpd":
+                if isinstance(value, (int, float)):
+                    # VPD range: 0 to 10 kPa (reasonable range for plants)
+                    if 0.0 <= value <= 10.0:
+                        return round(float(value), 2)
+                elif isinstance(value, str):
+                    try:
+                        vpd_value = float(value)
+                        if 0.0 <= vpd_value <= 10.0:
+                            return round(vpd_value, 2)
+                    except ValueError:
+                        pass
+                _LOGGER.debug("Could not parse VPD value: %s", value)
                 return None
             
             # Default: return the value as-is if no specific validation

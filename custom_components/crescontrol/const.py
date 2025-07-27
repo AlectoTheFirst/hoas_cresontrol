@@ -276,8 +276,9 @@ PWM_SETTLE_TIME: float = 0.1  # Time to wait for PWM settings to settle (100ms)
 # CO2 and Climate Sensor Constants
 # =============================================================================
 
-# CO2 sensor parameter names (RS485-based)
-CO2_PARAM_RS485: str = "rs485:response:103"
+# CO2 sensor parameter names (extension-based)
+CO2_PARAM_CONCENTRATION: str = "extension:co2-2006:co2-concentration"
+CO2_PARAM_TEMPERATURE: str = "extension:co2-2006:temperature"
 
 # CO2 validation limits
 CO2_PPM_MIN: int = 0  # Minimum CO2 concentration
@@ -287,9 +288,10 @@ CO2_PPM_NORMAL_MAX: int = 1000  # Normal indoor CO2 level
 CO2_PPM_HIGH_THRESHOLD: int = 1500  # High CO2 threshold
 CO2_PPM_CRITICAL_THRESHOLD: int = 5000  # Critical CO2 threshold
 
-# Climate sensor parameter names (RS485-based)
-CLIMATE_PARAM_TEMPERATURE: str = "rs485:response:100"
-CLIMATE_PARAM_HUMIDITY: str = "rs485:response:101"
+# Climate sensor parameter names (extension-based)
+CLIMATE_PARAM_TEMPERATURE: str = "extension:climate-2011:temperature"
+CLIMATE_PARAM_HUMIDITY: str = "extension:climate-2011:humidity"
+CLIMATE_PARAM_VPD: str = "extension:climate-2011:vpd"
 
 # Temperature validation limits (Celsius)
 TEMP_MIN: float = -40.0  # Minimum reasonable temperature
